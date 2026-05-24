@@ -729,16 +729,27 @@
                         appState.weight = data.weight;
                         currentSelectedPresetKey = data.currentSelectedPresetKey || 'iron';
                         
-                        // Update UI fields
-                        document.getElementById("input-label").value = data.label;
-                        document.getElementById("input-purchase").value = data.purchase;
-                        document.getElementById("slider-purchase").value = data.purchase;
-                        document.getElementById("input-sales").value = data.sales;
-                        document.getElementById("slider-sales").value = data.sales;
-                        document.getElementById("input-logistics").value = data.logistics;
-                        document.getElementById("slider-logistics").value = data.logistics;
-                        document.getElementById("input-weight").value = data.weight;
-                        document.getElementById("slider-weight").value = data.weight;
+                        // Update UI fields if they are not currently focused by the user
+                        const activeEl = document.activeElement;
+                        if (activeEl !== document.getElementById("input-label")) {
+                            document.getElementById("input-label").value = data.label;
+                        }
+                        if (activeEl !== document.getElementById("input-purchase") && activeEl !== document.getElementById("slider-purchase")) {
+                            document.getElementById("input-purchase").value = data.purchase;
+                            document.getElementById("slider-purchase").value = data.purchase;
+                        }
+                        if (activeEl !== document.getElementById("input-sales") && activeEl !== document.getElementById("slider-sales")) {
+                            document.getElementById("input-sales").value = data.sales;
+                            document.getElementById("slider-sales").value = data.sales;
+                        }
+                        if (activeEl !== document.getElementById("input-logistics") && activeEl !== document.getElementById("slider-logistics")) {
+                            document.getElementById("input-logistics").value = data.logistics;
+                            document.getElementById("slider-logistics").value = data.logistics;
+                        }
+                        if (activeEl !== document.getElementById("input-weight") && activeEl !== document.getElementById("slider-weight")) {
+                            document.getElementById("input-weight").value = data.weight;
+                            document.getElementById("slider-weight").value = data.weight;
+                        }
                         
                         runCoreCalculations();
                         renderPresets();
@@ -1210,8 +1221,10 @@
                         appState[item.key] = numericValue;
                         iEl.value = numericValue;
                         runCoreCalculations();
-                        saveCalculatorState();
                     }
+                });
+                sEl.addEventListener('change', (e) => {
+                    saveCalculatorState();
                 });
 
                 // Text Input: typing value doesn't overwrite input box characters dynamically, enabling safe decimals
@@ -1224,7 +1237,6 @@
                         appState[item.key] = numericValue;
                         sEl.value = Math.min(numericValue, sEl.max);
                         runCoreCalculations();
-                        saveCalculatorState();
                     }
                 });
 
@@ -1241,6 +1253,13 @@
                     runCoreCalculations();
                     saveCalculatorState();
                 });
+
+                // Trigger blur on enter key
+                iEl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        iEl.blur();
+                    }
+                });
             });
 
             // Label text binding
@@ -1248,7 +1267,14 @@
             if (labelInput) {
                 labelInput.addEventListener("input", (e) => {
                     appState.label = e.target.value;
+                });
+                labelInput.addEventListener("blur", (e) => {
                     saveCalculatorState();
+                });
+                labelInput.addEventListener("keypress", (e) => {
+                    if (e.key === 'Enter') {
+                        labelInput.blur();
+                    }
                 });
             }
         }
