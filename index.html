@@ -296,7 +296,7 @@
                 <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-3">
                     <div class="flex items-center justify-between border-b border-obsidian-800 pb-2">
                         <h3 class="text-xs font-black tracking-widest text-slate-400 uppercase font-mono">The Shadow Network</h3>
-                        <button onclick="addShadowNetworkContact()" class="text-[9px] font-bold bg-amberWhiskey-500/10 text-amberWhiskey-400 border border-amberWhiskey-500/20 px-2 py-0.5 rounded transition">
+                        <button onclick="openAddNodeModal()" class="text-[9px] font-bold bg-amberWhiskey-500/10 text-amberWhiskey-400 border border-amberWhiskey-500/20 px-2 py-0.5 rounded transition">
                             + Add Node
                         </button>
                     </div>
@@ -403,6 +403,49 @@
             <div class="flex items-center justify-end gap-3 mt-6">
                 <button onclick="closeAddProductModal()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition font-mono">Cancel</button>
                 <button onclick="submitNewProduct()" class="px-4 py-2 rounded-lg text-xs font-black bg-amberWhiskey-500 text-obsidian-950 hover:bg-amberWhiskey-400 transition font-mono uppercase">Inject Preset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Register Shadow Network Node -->
+    <div id="add-node-modal" class="fixed inset-0 bg-obsidian-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="text-sm font-black tracking-widest text-white uppercase font-mono mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-amberWhiskey-500 animate-pulse">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                Register Shadow Network Node
+            </h3>
+            
+            <div class="space-y-3.5">
+                <div>
+                    <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Supplier Name</label>
+                    <input type="text" id="modal-node-name" placeholder="e.g. Leong Scrap Corp" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amberWhiskey-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Yard Location</label>
+                    <input type="text" id="modal-node-yard" placeholder="e.g. Klang Port Depot" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amberWhiskey-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Preferred Metal</label>
+                        <input type="text" id="modal-node-preferred" placeholder="e.g. Copper Cables" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amberWhiskey-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Status</label>
+                        <select id="modal-node-active" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amberWhiskey-500">
+                            <option value="true" class="bg-obsidian-950">Active / Online</option>
+                            <option value="false" class="bg-obsidian-950">Inactive / Offline</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 mt-6">
+                <button onclick="closeAddNodeModal()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition font-mono">Cancel</button>
+                <button onclick="submitNewNode()" class="px-4 py-2 rounded-lg text-xs font-black bg-amberWhiskey-500 text-obsidian-950 hover:bg-amberWhiskey-400 transition font-mono uppercase">Register Node</button>
             </div>
         </div>
     </div>
@@ -986,33 +1029,56 @@
 
             sortedNetwork.forEach(node => {
                 container.innerHTML += `
-                    <div class="p-2.5 bg-obsidian-950 border border-obsidian-800 rounded-xl text-xs flex justify-between items-center hover:border-slate-700 transition">
+                    <div class="p-2.5 bg-obsidian-950 border border-obsidian-800 rounded-xl text-xs flex justify-between items-center hover:border-slate-700 transition group relative">
                         <div>
                             <p class="font-bold text-slate-200">${node.name}</p>
                             <span class="text-[10px] text-slate-500 font-mono">${node.yard} // Prefer: ${node.preferred}</span>
                         </div>
-                        <span class="w-2 h-2 rounded-full ${node.active ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-slate-700'}"></span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${node.active ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-slate-700'}"></span>
+                            <!-- Delete button shown on hover -->
+                            <button onclick="event.stopPropagation(); deleteShadowNetworkContact('${node.id}')" class="p-1 opacity-0 group-hover:opacity-100 transition hover:bg-smokyCrimson-500/10 rounded-md" title="Delete Node">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 text-smokyCrimson-500">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.34 4m-4.78 0L9.63 9m3.38-1.9-.34 4M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 `;
             });
         }
 
-        // Add Mock New Supplier Location with dynamic cloud synchronization
-        async function addShadowNetworkContact() {
-            const names = ["Leong Scrap Corp", "Penang Metals", "Kuala Lumpur Recycle Co", "East Coast Industrial", "Syed Brothers Waste"];
-            const yards = ["Klang Port Depot", "Butterworth Yards", "Puchong Salvage", "Kuantan Terminal", "Ipoh Old Town"];
-            const metals = ["Copper Cables", "HMS Steel", "Aluminium Cuttings", "Lead-Acid Batteries", "Brass Castings"];
+        // Add Shadow Network Contact Modal Controllers
+        function openAddNodeModal() {
+            document.getElementById("add-node-modal").classList.remove("hidden");
+        }
 
-            const randName = names[Math.floor(Math.random() * names.length)];
-            const randYard = yards[Math.floor(Math.random() * yards.length)];
-            const randMetal = metals[Math.floor(Math.random() * metals.length)];
+        function closeAddNodeModal() {
+            document.getElementById("add-node-modal").classList.add("hidden");
+            // Clear inputs
+            document.getElementById("modal-node-name").value = "";
+            document.getElementById("modal-node-yard").value = "";
+            document.getElementById("modal-node-preferred").value = "";
+            document.getElementById("modal-node-active").value = "true";
+        }
+
+        async function submitNewNode() {
+            const name = document.getElementById("modal-node-name").value.trim();
+            const yard = document.getElementById("modal-node-yard").value.trim();
+            const preferred = document.getElementById("modal-node-preferred").value.trim();
+            const active = document.getElementById("modal-node-active").value === "true";
+
+            if (!name || !yard || !preferred) {
+                showNotification("Please fill out all fields.", "error");
+                return;
+            }
 
             const newContact = {
                 id: "net_" + Date.now(),
-                name: randName,
-                yard: randYard,
-                preferred: randMetal,
-                active: Math.random() > 0.3
+                name: name,
+                yard: yard,
+                preferred: preferred,
+                active: active
             };
 
             if (db && userId) {
@@ -1026,6 +1092,25 @@
                 appState.network.unshift(newContact);
                 saveLocalBackup('network', appState.network);
                 showNotification("New shadow yard node registered.");
+                renderShadowDirectory();
+            }
+
+            closeAddNodeModal();
+        }
+
+        // Delete Shadow Network Contact
+        async function deleteShadowNetworkContact(id) {
+            if (db && userId) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', id));
+                    showNotification("Shadow node removed.", "error");
+                } catch (e) {
+                    showNotification("Failed purging node from database", "error");
+                }
+            } else {
+                appState.network = appState.network.filter(n => n.id !== id);
+                saveLocalBackup('network', appState.network);
+                showNotification("Shadow node removed.", "error");
                 renderShadowDirectory();
             }
         }
@@ -1414,7 +1499,10 @@
         window.toggleLedgerView = toggleLedgerView;
         window.resetAppToDefaults = resetAppToDefaults;
         window.switchTab = switchTab;
-        window.addShadowNetworkContact = addShadowNetworkContact;
+        window.openAddNodeModal = openAddNodeModal;
+        window.closeAddNodeModal = closeAddNodeModal;
+        window.submitNewNode = submitNewNode;
+        window.deleteShadowNetworkContact = deleteShadowNetworkContact;
         window.exportBlackBookCSV = exportBlackBookCSV;
         window.transmitWireQuery = transmitWireQuery;
         window.showNotification = showNotification;
