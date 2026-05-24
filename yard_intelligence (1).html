@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- iOS Web App Configurations -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Yard Intel">
+    <meta name="theme-color" content="#050508">
+
+    <title>Yard Intelligence - The Syndicate Desk</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: {
+                            950: '#050508',
+                            900: '#0a0a0f',
+                            800: '#12121a',
+                            700: '#1b1b26',
+                            600: '#262636',
+                            500: '#34344a'
+                        },
+                        amberWhiskey: {
+                            500: '#d97706', // Golden Amber
+                            600: '#b45309',
+                            400: '#f59e0b',
+                            300: '#fbbf24'
+                        },
+                        smokyCrimson: {
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            400: '#fb7185'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['SFMono-Regular', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Standalone iOS optimizations */
+        body {
+            overscroll-behavior-y: contain;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        /* Cinematic film grain and neon glowing indicators */
+        .glowing-border-amber {
+            box-shadow: 0 0 10px rgba(217, 119, 6, 0.15);
+        }
+        .glowing-border-crimson {
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
+        }
+        .terminal-text-amber {
+            text-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+        }
+        .terminal-text-cyan {
+            text-shadow: 0 0 5px rgba(6, 182, 212, 0.5);
+        }
+        /* Custom ultra-thin scrollbar */
+        ::-webkit-scrollbar {
+            width: 3px;
+            height: 3px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050508;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1b1b26;
+            border-radius: 9px;
+        }
+    </style>
+</head>
+<body class="bg-obsidian-950 text-slate-100 min-h-full flex flex-col selection:bg-amberWhiskey-500 selection:text-obsidian-950">
+
+    <!-- Top Status Bar Spacer for Standalone Apps -->
+    <div class="h-4 bg-obsidian-950/90 sticky top-0 z-50"></div>
+
+    <!-- Header Block -->
+    <header class="border-b border-obsidian-800 bg-obsidian-900/90 backdrop-blur px-4 py-4 md:px-8 sticky top-4 z-40 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-amberWhiskey-500/10 rounded-xl border border-amberWhiskey-500/20 text-amberWhiskey-500 animate-pulse">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18M18.75 3v18M9 6h6M9 9h6M9 12h6M9 15h6M9 18h6" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-sm md:text-lg font-black tracking-widest text-white uppercase font-mono">Yard Intelligence</h1>
+                <p class="text-[10px] text-amberWhiskey-400 uppercase tracking-wider font-mono">Syndicate Scrap Logistics Node // MYR</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold bg-slate-900 border border-slate-800 text-slate-400 font-mono">
+                <span id="sync-indicator-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                <span id="sync-indicator-text">MEM-ONLY</span>
+            </span>
+            <button onclick="resetAppToDefaults()" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800 transition font-mono uppercase">
+                RE-CALIBRATE
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col gap-4">
+
+        <!-- Mobile Quick-Tab Selector -->
+        <div class="flex md:hidden bg-obsidian-900 border border-obsidian-800 rounded-xl p-1 mb-2">
+            <button onclick="switchTab('desk')" id="tab-desk" class="flex-1 py-2 text-xs font-bold rounded-lg bg-amberWhiskey-500 text-obsidian-950 transition font-mono">
+                THE DESK
+            </button>
+            <button onclick="switchTab('network')" id="tab-network" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 transition font-mono">
+                THE WIRE
+            </button>
+        </div>
+
+        <!-- Desktop Grid System -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            
+            <!-- LEFT PANEL: Dynamic Calculators & Presets (7 Columns) -->
+            <section id="panel-desk" class="md:col-span-7 flex flex-col gap-4">
+                
+                <!-- Quick Loader Presets -->
+                <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between border-b border-obsidian-800 pb-2">
+                        <h3 class="text-xs font-black tracking-widest text-slate-400 uppercase font-mono">Malaysian Scrap Standards</h3>
+                        <button onclick="openAddProductModal()" class="text-[10px] font-bold bg-amberWhiskey-500/10 text-amberWhiskey-400 border border-amberWhiskey-500/20 px-2 py-0.5 rounded transition font-mono">
+                            + ADD STANDARD
+                        </button>
+                    </div>
+                    <div id="preset-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[180px] overflow-y-auto pr-1">
+                        <!-- Instantiated Dynamically via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- The Syndicate Desk (Interactive Parameters Panel) -->
+                <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-4 glowing-border-amber">
+                    <div class="flex items-center justify-between border-b border-obsidian-800 pb-2">
+                        <h2 class="text-xs font-black tracking-widest text-white uppercase font-mono flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amberWhiskey-500 animate-pulse"></span>
+                            The Syndicate Desk
+                        </h2>
+                        <span class="text-[10px] text-slate-500 font-mono">Fine-Tune Live Valuation</span>
+                    </div>
+
+                    <!-- Material Name -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 font-mono mb-1">Custom Material Label</label>
+                        <input type="text" id="input-label" value="Iron Turning Swarf" 
+                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white uppercase tracking-wider focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Buying Cost -->
+                        <div class="bg-obsidian-950/50 border border-obsidian-800/60 p-3 rounded-xl">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-medium text-slate-400 font-mono">Buying Cost (RM/kg)</label>
+                                <input type="number" id="input-purchase" step="0.01" value="0.86" 
+                                    class="w-20 bg-obsidian-950 border border-obsidian-800 text-right text-xs font-black text-white p-1 rounded font-mono">
+                            </div>
+                            <input type="range" id="slider-purchase" min="0" max="40" step="0.05" value="0.86" 
+                                class="w-full h-1 bg-obsidian-850 rounded-lg appearance-none cursor-pointer accent-amberWhiskey-500">
+                        </div>
+
+                        <!-- Resale Selling Target -->
+                        <div class="bg-obsidian-950/50 border border-obsidian-800/60 p-3 rounded-xl">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-medium text-slate-400 font-mono">Target Sales (RM/kg)</label>
+                                <input type="number" id="input-sales" step="0.01" value="1.03" 
+                                    class="w-20 bg-obsidian-950 border border-obsidian-800 text-right text-xs font-black text-white p-1 rounded font-mono">
+                            </div>
+                            <input type="range" id="slider-sales" min="0" max="45" step="0.05" value="1.03" 
+                                class="w-full h-1 bg-obsidian-850 rounded-lg appearance-none cursor-pointer accent-amberWhiskey-500">
+                        </div>
+
+                        <!-- Freight Logistics Cost -->
+                        <div class="bg-obsidian-950/50 border border-obsidian-800/60 p-3 rounded-xl">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-medium text-slate-400 font-mono">Logistics Cost (RM/kg)</label>
+                                <input type="number" id="input-logistics" step="0.01" value="0.05" 
+                                    class="w-20 bg-obsidian-950 border border-obsidian-800 text-right text-xs font-black text-white p-1 rounded font-mono">
+                            </div>
+                            <input type="range" id="slider-logistics" min="0" max="3" step="0.01" value="0.05" 
+                                class="w-full h-1 bg-obsidian-850 rounded-lg appearance-none cursor-pointer accent-amberWhiskey-500">
+                        </div>
+
+                        <!-- Total Tonnes Volume -->
+                        <div class="bg-obsidian-950/50 border border-obsidian-800/60 p-3 rounded-xl">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-medium text-slate-400 font-mono">Batch Weight (Metric Tonnes)</label>
+                                <input type="number" id="input-weight" step="0.01" value="15.0" 
+                                    class="w-20 bg-obsidian-950 border border-obsidian-800 text-right text-xs font-black text-white p-1 rounded font-mono">
+                            </div>
+                            <input type="range" id="slider-weight" min="0.1" max="100" step="0.1" value="15.0" 
+                                class="w-full h-1 bg-obsidian-850 rounded-lg appearance-none cursor-pointer accent-amberWhiskey-500">
+                        </div>
+                    </div>
+
+                    <!-- Real-time Estimation Ledger Card -->
+                    <div class="bg-obsidian-950 p-4 rounded-xl border border-obsidian-800 space-y-2">
+                        <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                            <div class="text-slate-400">Buying Capital Required:</div>
+                            <div id="out-capital" class="text-right text-slate-200 font-bold">RM 12,900</div>
+
+                            <div class="text-slate-400">Logistics Cost Overload:</div>
+                            <div id="out-freight" class="text-right text-slate-200 font-bold">RM 750</div>
+
+                            <div class="text-slate-400">Gross Projected Margin:</div>
+                            <div id="out-gross-margin" class="text-right text-amberWhiskey-400 font-bold">RM 0.17 / kg</div>
+
+                            <div class="text-slate-400">Net Margin Realized:</div>
+                            <div id="out-net-margin" class="text-right text-emerald-400 font-bold">RM 0.12 / kg</div>
+                        </div>
+                        <hr class="border-obsidian-800 my-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black tracking-widest text-slate-400 font-mono uppercase">Net Profit (MYR):</span>
+                            <span id="out-profit" class="text-lg md:text-xl font-mono text-emerald-400 font-black tracking-tight terminal-text-cyan">RM 1,800.00</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-mono text-slate-500 uppercase">Margin Percentage:</span>
+                            <span id="out-percentage" class="text-xs font-mono text-emerald-400 font-semibold">11.6%</span>
+                        </div>
+                    </div>
+
+                    <button onclick="commitToBlackBook()" class="w-full py-3.5 bg-gradient-to-r from-amberWhiskey-600 to-amberWhiskey-400 hover:from-amberWhiskey-500 hover:to-amberWhiskey-300 text-obsidian-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-amberWhiskey-500/10 font-mono">
+                        Commit Deal to The Black Book
+                    </button>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: The Whispering Wire & Shadow Network (5 Columns) -->
+            <section id="panel-network" class="hidden md:flex md:col-span-5 flex-col gap-4">
+                
+                <!-- The Whispering Wire Chat Terminal -->
+                <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-3 h-[380px] glowing-border-crimson">
+                    <div class="flex items-center justify-between border-b border-obsidian-800 pb-2">
+                        <h3 class="text-xs font-black tracking-widest text-smokyCrimson-400 uppercase font-mono flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-smokyCrimson-500 animate-ping"></span>
+                            The Whispering Wire
+                        </h3>
+                        <span class="text-[9px] font-mono text-slate-500 uppercase">Gemini Intel Node</span>
+                    </div>
+
+                    <!-- Conversation Window -->
+                    <div id="wire-console" class="flex-grow overflow-y-auto bg-obsidian-950 p-3 rounded-xl border border-obsidian-800/60 font-mono text-[10.5px] leading-relaxed text-amberWhiskey-400/90 space-y-3">
+                        <div class="text-slate-500 italic">// Wire tap initialized. Ask the syndicate advisor about regional prices, arbitrage, or yard strategy...</div>
+                        <div class="text-slate-300"><span class="text-smokyCrimson-400 font-bold">[SYNDICATE_WIRE]:</span> Connection secure. Klang and Ipoh yards reporting heavy operations. What's the query?</div>
+                    </div>
+
+                    <!-- Input System -->
+                    <div class="flex gap-2">
+                        <input type="text" id="wire-input" placeholder="Query terminal (e.g. Klang copper margins)..." 
+                            class="flex-grow bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-smokyCrimson-500"
+                            onkeypress="handleWireInputKeyPress(event)">
+                        <button onclick="transmitWireQuery()" class="bg-smokyCrimson-600 hover:bg-smokyCrimson-500 text-white px-3 py-2 rounded-lg transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.925A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.087l-1.414 4.926a.75.75 0 0 0 .826.95 28.896 28.896 0 0 0 15.293-7.154.75.75 0 0 0 0-1.115A28.897 28.897 0 0 0 3.105 2.288Z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- The Shadow Network Directory -->
+                <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between border-b border-obsidian-800 pb-2">
+                        <h3 class="text-xs font-black tracking-widest text-slate-400 uppercase font-mono">The Shadow Network</h3>
+                        <button onclick="addShadowNetworkContact()" class="text-[9px] font-bold bg-amberWhiskey-500/10 text-amberWhiskey-400 border border-amberWhiskey-500/20 px-2 py-0.5 rounded transition">
+                            + Add Node
+                        </button>
+                    </div>
+
+                    <div id="network-list" class="space-y-2 max-h-[160px] overflow-y-auto">
+                        <!-- Dynamic directory injections -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- LOWER PANEL: The Black Book Ledger -->
+        <section class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-obsidian-800 pb-3">
+                <div>
+                    <h3 class="text-xs font-black tracking-widest text-white uppercase font-mono">The Black Book</h3>
+                    <p class="text-[9px] text-slate-500 uppercase font-mono mt-0.5">Syndicate Transaction Log & Historical Audit</p>
+                </div>
+                
+                <!-- Ledger Sub-Tab Toggle -->
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1 bg-obsidian-950 p-1 rounded-xl border border-obsidian-800 text-[10px]">
+                        <button onclick="toggleLedgerView('active')" id="btn-ledger-active" class="px-2.5 py-1 rounded-lg font-bold bg-amberWhiskey-500 text-obsidian-950 transition font-mono uppercase">
+                            Active Deals
+                        </button>
+                        <button onclick="toggleLedgerView('voided')" id="btn-ledger-voided" class="px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition font-mono uppercase flex items-center gap-1">
+                            Voided Log 
+                            <span id="voided-count" class="bg-obsidian-800 text-[9px] text-slate-400 px-1.5 py-0.2 rounded-full border border-obsidian-700">0</span>
+                        </button>
+                    </div>
+
+                    <button onclick="exportBlackBookCSV()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800 rounded-lg text-[10px] font-bold font-mono transition">
+                        EXPORT CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ledger Database Grid -->
+            <div class="overflow-x-auto rounded-xl border border-obsidian-800 bg-obsidian-950 max-h-[250px]">
+                <table class="w-full text-left text-xs font-mono text-slate-300 table-auto border-collapse">
+                    <thead class="bg-obsidian-900 sticky top-0 border-b border-obsidian-800 text-slate-400 font-bold">
+                        <tr>
+                            <th class="py-2.5 px-3">Timestamp</th>
+                            <th class="py-2.5 px-3">Asset Classification</th>
+                            <th class="py-2.5 px-3">Batch Weight</th>
+                            <th class="py-2.5 px-3">Buy / Sell (RM/kg)</th>
+                            <th class="py-2.5 px-3">Freight (RM/kg)</th>
+                            <th class="py-2.5 px-3">Net Profit</th>
+                            <th class="py-2.5 px-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledger-rows" class="divide-y divide-obsidian-800/60">
+                        <!-- Ledger data -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Inject Custom Standard -->
+    <div id="add-product-modal" class="fixed inset-0 bg-obsidian-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="text-sm font-black tracking-widest text-white uppercase font-mono mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-amberWhiskey-500 animate-pulse">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                Deploy New Product Standard
+            </h3>
+            
+            <div class="space-y-3.5">
+                <div>
+                    <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Standard Name</label>
+                    <input type="text" id="modal-product-name" placeholder="e.g. Lead-Acid Batteries" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amberWhiskey-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Short Code</label>
+                        <input type="text" id="modal-product-code" placeholder="e.g. PB-BATT" max="8" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 uppercase outline-none focus:border-amberWhiskey-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Weight (MT)</label>
+                        <input type="number" id="modal-product-weight" value="10.0" step="0.1" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 outline-none focus:border-amberWhiskey-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[9px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Buy (RM/kg)</label>
+                        <input type="number" id="modal-product-purchase" value="2.50" step="0.01" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-2 py-2 text-xs font-mono text-slate-100 outline-none focus:border-amberWhiskey-500">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Sell (RM/kg)</label>
+                        <input type="number" id="modal-product-sales" value="3.10" step="0.01" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-2 py-2 text-xs font-mono text-slate-100 outline-none focus:border-amberWhiskey-500">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1">Freight (RM/kg)</label>
+                        <input type="number" id="modal-product-logistics" value="0.08" step="0.01" class="w-full bg-obsidian-950 border border-obsidian-800 rounded-lg px-2 py-2 text-xs font-mono text-slate-100 outline-none focus:border-amberWhiskey-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 mt-6">
+                <button onclick="closeAddProductModal()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition font-mono">Cancel</button>
+                <button onclick="submitNewProduct()" class="px-4 py-2 rounded-lg text-xs font-black bg-amberWhiskey-500 text-obsidian-950 hover:bg-amberWhiskey-400 transition font-mono uppercase">Inject Preset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating System Notifiers -->
+    <div id="notify-stack" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"></div>
+
+    <!-- UI Footer -->
+    <footer class="py-6 border-t border-obsidian-900 text-center text-[9px] font-mono text-slate-600 bg-obsidian-950">
+        <p>YARD INTEL SANDBOX // MALAYSIAN RECYCLABLES AND LOGISTICS MODEL // RUNTIME SAFE</p>
+    </footer>
+
+    <!-- Firebase SDK Integration Module -->
+    <script type="module">
+        // Dynamic ESM Imports from Google CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State variables
+        let db = null;
+        let auth = null;
+        let userId = null;
+        let appId = 'default-app-id';
+        let currentLedgerView = 'active'; // 'active' or 'voided'
+        let currentSelectedPresetKey = 'iron';
+
+        const hasFirebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config;
+
+        // Static Default Preset Catalog
+        const staticPresets = {
+            iron: { label: "Iron Turning Swarf", purchase: 0.86, sales: 1.03, logistics: 0.05, weight: 15.0, code: "FE-TURNING" },
+            aluminum: { label: "Aluminium Formwork", purchase: 11.70, sales: 13.90, logistics: 0.15, weight: 8.0, code: "AL-FORM" },
+            copper: { label: "Copper Wire (Bright/Shiny)", purchase: 32.50, sales: 35.80, logistics: 0.25, weight: 3.5, code: "CU-WIRE" }
+        };
+
+        // App reactive configuration object
+        window.appState = {
+            label: "Iron Turning Swarf",
+            purchase: 0.86,
+            sales: 1.03,
+            logistics: 0.05,
+            weight: 15.0,
+            
+            // local ledger list (for non-database fallback runtime operations)
+            ledger: [
+                { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
+                { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
+            ],
+            voidedLedger: [], // Remember everything that is deleted!
+            customPresets: [], // Custom added product standards list
+            
+            network: [
+                { id: "net_1", name: "Chuan Hock Metals", yard: "Klang Yard", preferred: "Copper Wire", active: true },
+                { id: "net_2", name: "Sin Lim Recycling", yard: "Ipoh Depot", preferred: "Iron Turning", active: true },
+                { id: "net_3", name: "Iskandar Scrap", yard: "JB Terminal", preferred: "Aluminium", active: false }
+            ]
+        };
+
+        // Floating Toast Notification Engine
+        function showNotification(msg, type = "success") {
+            const container = document.getElementById("notify-stack");
+            if (!container) return;
+            const toast = document.createElement("div");
+            toast.className = `p-3 rounded-xl border flex items-center justify-between text-xs font-semibold shadow-xl transition-all duration-300 translate-y-4 pointer-events-auto ${
+                type === "success" 
+                ? "bg-amberWhiskey-500/10 border-amberWhiskey-500/25 text-amberWhiskey-400 glowing-border-amber" 
+                : "bg-smokyCrimson-500/10 border-smokyCrimson-500/25 text-smokyCrimson-400 glowing-border-crimson"
+            }`;
+            toast.innerHTML = `
+                <span>${msg}</span>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white ml-2 text-sm">×</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove("translate-y-4"), 50);
+            setTimeout(() => {
+                toast.classList.add("translate-y-4", "opacity-0");
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Initialize Firebase Lifecycle
+        async function initializeDatabase() {
+            if (!hasFirebaseConfig) {
+                console.log("No Firebase config detected. Running in single-session client storage mode.");
+                updateSyncUI(false);
+                renderPresets();
+                renderLedgerTable();
+                renderShadowDirectory();
+                return;
+            }
+
+            try {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+                updateSyncUI(true, "CONNECTING...");
+
+                // Authenticate (Rule 3 priority)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        updateSyncUI(true, "SECURE CLOUD SYNC");
+                        setupFirestoreSubscribers();
+                    }
+                });
+
+            } catch (error) {
+                console.error("Database connection fault:", error);
+                updateSyncUI(false, "OFFLINE FALLBACK");
+                renderPresets();
+                renderLedgerTable();
+                renderShadowDirectory();
+            }
+        }
+
+        function updateSyncUI(online, labelText = "") {
+            const dot = document.getElementById("sync-indicator-dot");
+            const text = document.getElementById("sync-indicator-text");
+            if (online) {
+                dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50";
+                text.innerText = labelText;
+                text.className = "text-emerald-400 font-black";
+            } else {
+                dot.className = "w-1.5 h-1.5 rounded-full bg-slate-500";
+                text.innerText = labelText || "MEM-ONLY";
+                text.className = "text-slate-400 font-bold";
+            }
+        }
+
+        // Setup real-time listeners for state tables
+        function setupFirestoreSubscribers() {
+            if (!db || !userId) return;
+
+            // 1. Subscribe to Active Transactions Ledger
+            const ledgerRef = collection(db, 'artifacts', appId, 'users', userId, 'ledger');
+            onSnapshot(ledgerRef, (snapshot) => {
+                let items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Onboarding scenario: Prepopulate first-time users
+                if (items.length === 0 && appState.ledger.length > 0) {
+                    appState.ledger.forEach(async (item) => {
+                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id), item);
+                    });
+                } else {
+                    appState.ledger = items;
+                    renderLedgerTable();
+                }
+            }, (err) => showNotification("Ledger listener lost synchronization", "error"));
+
+            // 2. Subscribe to Voided Ledger Audit Trail
+            const voidedRef = collection(db, 'artifacts', appId, 'users', userId, 'voided_ledger');
+            onSnapshot(voidedRef, (snapshot) => {
+                let items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                appState.voidedLedger = items;
+                
+                // Update Badge Pill count
+                document.getElementById("voided-count").innerText = items.length;
+                renderLedgerTable();
+            }, (err) => showNotification("Audit log sync interrupted", "error"));
+
+            // 3. Subscribe to Shadow Network Suppliers list
+            const networkRef = collection(db, 'artifacts', appId, 'users', userId, 'network');
+            onSnapshot(networkRef, (snapshot) => {
+                let items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+
+                if (items.length === 0 && appState.network.length > 0) {
+                    appState.network.forEach(async (item) => {
+                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id), item);
+                    });
+                } else {
+                    appState.network = items;
+                    renderShadowDirectory();
+                }
+            }, (err) => showNotification("Network directory sync disconnected", "error"));
+
+            // 4. Subscribe to Custom Presets / Products list
+            const presetsRef = collection(db, 'artifacts', appId, 'users', userId, 'presets');
+            onSnapshot(presetsRef, (snapshot) => {
+                let items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                appState.customPresets = items;
+                renderPresets();
+            }, (err) => showNotification("Products list sync error", "error"));
+        }
+
+        // Dynamic State-mutator operations that support both Online Sync and offline fallbacks
+        async function commitToBlackBook() {
+            const weightKg = appState.weight * 1000;
+            const netMarginPerKg = appState.sales - appState.purchase - appState.logistics;
+            const totalNetProfit = netMarginPerKg * weightKg;
+
+            const now = new Date();
+            const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            const newDeal = {
+                id: "tr_" + Date.now(),
+                date: dateStr,
+                label: appState.label.toUpperCase(),
+                weight: appState.weight,
+                purchase: appState.purchase,
+                sales: appState.sales,
+                logistics: appState.logistics,
+                profit: totalNetProfit
+            };
+
+            if (db && userId) {
+                // Online database sync save path
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', newDeal.id), newDeal);
+                    showNotification(`Logged trade under ${appState.label}`);
+                } catch (e) {
+                    showNotification("Sync interrupted. Logging locally.", "error");
+                }
+            } else {
+                // Local state fallbacks
+                appState.ledger.unshift(newDeal);
+                showNotification(`Logged trade under ${appState.label}`);
+                renderLedgerTable();
+            }
+        }
+
+        // Moves active transaction row to the voided log (deleted audit trail)
+        async function deleteLedgerRow(id) {
+            const targetIndex = appState.ledger.findIndex(item => item.id === id);
+            if (targetIndex === -1) return;
+
+            const deletedRecord = appState.ledger[targetIndex];
+
+            if (db && userId) {
+                try {
+                    // 1. Write the deleted record copy to the Voided collection
+                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', deletedRecord.id), deletedRecord);
+                    // 2. Erase from active collections
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', id));
+                    showNotification("Deals updated. Item logged in the Voided Log.");
+                } catch (e) {
+                    showNotification("Failed syncing delete action", "error");
+                }
+            } else {
+                appState.ledger.splice(targetIndex, 1);
+                appState.voidedLedger.unshift(deletedRecord);
+                document.getElementById("voided-count").innerText = appState.voidedLedger.length;
+                showNotification("Deals updated. Item logged in the Voided Log.");
+                renderLedgerTable();
+            }
+        }
+
+        // Restores a voided item back to the active ledger
+        async function restoreLedgerRow(id) {
+            const targetIndex = appState.voidedLedger.findIndex(item => item.id === id);
+            if (targetIndex === -1) return;
+
+            const restoredRecord = appState.voidedLedger[targetIndex];
+
+            if (db && userId) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', restoredRecord.id), restoredRecord);
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', id));
+                    showNotification("Restored deal logs back to Active Deals");
+                } catch (e) {
+                    showNotification("Failed syncing restore actions", "error");
+                }
+            } else {
+                appState.voidedLedger.splice(targetIndex, 1);
+                appState.ledger.unshift(restoredRecord);
+                document.getElementById("voided-count").innerText = appState.voidedLedger.length;
+                showNotification("Restored deal logs back to Active Deals");
+                renderLedgerTable();
+            }
+        }
+
+        // Erase a voided item permanently from history logs
+        async function purgeLedgerRow(id) {
+            if (db && userId) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', id));
+                    showNotification("Audit item permanently purged", "error");
+                } catch (e) {
+                    showNotification("Failed syncing purge action", "error");
+                }
+            } else {
+                appState.voidedLedger = appState.voidedLedger.filter(item => item.id !== id);
+                document.getElementById("voided-count").innerText = appState.voidedLedger.length;
+                showNotification("Audit item permanently purged", "error");
+                renderLedgerTable();
+            }
+        }
+
+        // Add Product Presets Modal Controllers
+        function openAddProductModal() {
+            document.getElementById("add-product-modal").classList.remove("hidden");
+        }
+
+        function closeAddProductModal() {
+            document.getElementById("add-product-modal").classList.add("hidden");
+        }
+
+        async function submitNewProduct() {
+            const label = document.getElementById("modal-product-name").value.trim();
+            const rawCode = document.getElementById("modal-product-code").value.trim().toUpperCase();
+            const weight = parseFloat(document.getElementById("modal-product-weight").value);
+            const purchase = parseFloat(document.getElementById("modal-product-purchase").value);
+            const sales = parseFloat(document.getElementById("modal-product-sales").value);
+            const logistics = parseFloat(document.getElementById("modal-product-logistics").value);
+
+            if (!label || !rawCode) {
+                showNotification("Fill out standard name and code values.", "error");
+                return;
+            }
+
+            if (isNaN(weight) || isNaN(purchase) || isNaN(sales) || isNaN(logistics)) {
+                showNotification("Enter valid numerical bounds.", "error");
+                return;
+            }
+
+            const id = "custom_" + Date.now();
+            const newProduct = {
+                id,
+                label,
+                code: rawCode,
+                weight,
+                purchase,
+                sales,
+                logistics
+            };
+
+            if (db && userId) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', id), newProduct);
+                    showNotification(`New preset ${rawCode} synced successfully.`);
+                } catch (e) {
+                    showNotification("Sync target failure", "error");
+                }
+            } else {
+                appState.customPresets.push(newProduct);
+                showNotification(`Created standard preset standard: ${rawCode}`);
+                renderPresets();
+            }
+
+            closeAddProductModal();
+            
+            // Auto-load newly created standard
+            loadCustomPresetObject(newProduct);
+        }
+
+        // Dynamic rendering of all preset standards
+        function renderPresets() {
+            const container = document.getElementById("preset-buttons-container");
+            container.innerHTML = "";
+
+            // Render default static standards first
+            Object.keys(staticPresets).forEach(key => {
+                const item = staticPresets[key];
+                const highlightBorder = currentSelectedPresetKey === key ? "border-amberWhiskey-500" : "border-obsidian-800";
+                
+                container.innerHTML += `
+                    <button onclick="loadPreset('${key}')" id="preset-${key}" class="bg-obsidian-950 border ${highlightBorder} p-3 rounded-xl text-left transition hover:border-amberWhiskey-400 flex flex-col justify-between">
+                        <span class="text-[9px] font-mono text-amberWhiskey-400 font-bold uppercase">${item.code}</span>
+                        <span class="text-xs font-black text-white mt-1 truncate w-full">${item.label}</span>
+                        <span class="text-[10px] text-slate-500 font-mono mt-1">RM ${item.purchase.toFixed(2)} / kg</span>
+                    </button>
+                `;
+            });
+
+            // Render custom user-created products next
+            appState.customPresets.forEach(preset => {
+                const highlightBorder = currentSelectedPresetKey === preset.id ? "border-amberWhiskey-500" : "border-obsidian-800";
+                container.innerHTML += `
+                    <button onclick="loadCustomPreset('${preset.id}')" id="preset-${preset.id}" class="bg-obsidian-950 border ${highlightBorder} p-3 rounded-xl text-left transition hover:border-amberWhiskey-400 flex flex-col justify-between group relative">
+                        <span class="text-[9px] font-mono text-amberWhiskey-400 font-bold uppercase">${preset.code}</span>
+                        <span class="text-xs font-black text-white mt-1 truncate w-full">${preset.label}</span>
+                        <span class="text-[10px] text-slate-500 font-mono mt-1">RM ${preset.purchase.toFixed(2)} / kg</span>
+                        
+                        <!-- Mini delete bin badge for custom standards -->
+                        <div onclick="event.stopPropagation(); deleteCustomPreset('${preset.id}')" class="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 transition hover:bg-smokyCrimson-500/10 rounded-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 text-smokyCrimson-500">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.34 4m-4.78 0L9.63 9m3.38-1.9-.34 4M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" />
+                            </svg>
+                        </div>
+                    </button>
+                `;
+            });
+        }
+
+        // Delete custom added standard
+        async function deleteCustomPreset(id) {
+            if (db && userId) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', id));
+                    showNotification("Product preset removed.", "error");
+                } catch (e) {
+                    showNotification("Failed purging preset from database", "error");
+                }
+            } else {
+                appState.customPresets = appState.customPresets.filter(p => p.id !== id);
+                showNotification("Product preset removed.", "error");
+                renderPresets();
+            }
+        }
+
+        // Load Preset Standards
+        function loadPreset(key) {
+            const data = staticPresets[key];
+            if (!data) return;
+
+            currentSelectedPresetKey = key;
+            loadCustomPresetObject(data);
+            renderPresets();
+        }
+
+        // Load Custom preset dynamically
+        function loadCustomPreset(id) {
+            const data = appState.customPresets.find(p => p.id === id);
+            if (!data) return;
+
+            currentSelectedPresetKey = id;
+            loadCustomPresetObject(data);
+            renderPresets();
+        }
+
+        function loadCustomPresetObject(data) {
+            appState.label = data.label;
+            appState.purchase = data.purchase;
+            appState.sales = data.sales;
+            appState.logistics = data.logistics;
+            appState.weight = data.weight;
+
+            document.getElementById("input-label").value = data.label;
+            document.getElementById("input-purchase").value = data.purchase;
+            document.getElementById("slider-purchase").value = data.purchase;
+            document.getElementById("input-sales").value = data.sales;
+            document.getElementById("slider-sales").value = data.sales;
+            document.getElementById("input-logistics").value = data.logistics;
+            document.getElementById("slider-logistics").value = data.logistics;
+            document.getElementById("input-weight").value = data.weight;
+            document.getElementById("slider-weight").value = data.weight;
+
+            showNotification(`Loaded parameters for ${data.label}`);
+            runCoreCalculations();
+        }
+
+        // UI rendering updates
+        function renderLedgerTable() {
+            const tbody = document.getElementById("ledger-rows");
+            tbody.innerHTML = "";
+
+            const targetSource = currentLedgerView === 'active' ? appState.ledger : appState.voidedLedger;
+
+            if (targetSource.length === 0) {
+                const message = currentLedgerView === 'active' 
+                    ? "No active historical deal transactions recorded in the black book." 
+                    : "No voided deals currently on record in the audit log.";
+                tbody.innerHTML = `<tr><td colspan="7" class="py-5 text-center text-slate-500 italic font-mono bg-obsidian-900/10">${message}</td></tr>`;
+                return;
+            }
+
+            // Client side sorting fallback by ID timestamp
+            const sortedRecords = [...targetSource].sort((a,b) => b.id.localeCompare(a.id));
+
+            sortedRecords.forEach(row => {
+                const profitClass = row.profit >= 0 ? "text-emerald-400 font-bold" : "text-smokyCrimson-400 font-bold";
+                
+                let actionBtnHTML = '';
+                if (currentLedgerView === 'active') {
+                    actionBtnHTML = `
+                        <button onclick="deleteLedgerRow('${row.id}')" class="text-smokyCrimson-500 hover:text-smokyCrimson-400 px-2 font-bold tracking-wider uppercase text-[10px]">
+                            VOID
+                        </button>
+                    `;
+                } else {
+                    actionBtnHTML = `
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="restoreLedgerRow('${row.id}')" class="text-emerald-400 hover:text-emerald-300 font-bold text-[10px] uppercase">
+                                RESTORE
+                            </button>
+                            <span class="text-slate-700">|</span>
+                            <button onclick="purgeLedgerRow('${row.id}')" class="text-smokyCrimson-500 hover:text-smokyCrimson-400 font-bold text-[10px] uppercase">
+                                PURGE
+                            </button>
+                        </div>
+                    `;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-obsidian-900/60 transition duration-150">
+                        <td class="py-3 px-3 text-slate-500 text-[10px]">${row.date}</td>
+                        <td class="py-3 px-3 text-slate-200 font-bold ${currentLedgerView === 'voided' ? 'line-through text-slate-500' : ''}">${row.label}</td>
+                        <td class="py-3 px-3 font-mono">${row.weight.toFixed(2)} MT</td>
+                        <td class="py-3 px-3 font-mono">RM ${row.purchase.toFixed(2)} / RM ${row.sales.toFixed(2)}</td>
+                        <td class="py-3 px-3 font-mono text-slate-400">RM ${row.logistics.toFixed(2)}</td>
+                        <td class="py-3 px-3 font-mono ${profitClass}">RM ${row.profit.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
+                        <td class="py-3 px-3 text-right">
+                            ${actionBtnHTML}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Toggles views between Active Ledger logs vs Voided lists
+        function toggleLedgerView(view) {
+            currentLedgerView = view;
+            const activeBtn = document.getElementById("btn-ledger-active");
+            const voidedBtn = document.getElementById("btn-ledger-voided");
+
+            if (view === 'active') {
+                activeBtn.className = "px-2.5 py-1 rounded-lg font-bold bg-amberWhiskey-500 text-obsidian-950 transition font-mono uppercase";
+                voidedBtn.className = "px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition font-mono uppercase flex items-center gap-1";
+            } else {
+                voidedBtn.className = "px-2.5 py-1 rounded-lg font-bold bg-amberWhiskey-500 text-obsidian-950 transition font-mono uppercase flex items-center gap-1";
+                activeBtn.className = "px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition font-mono uppercase";
+            }
+            renderLedgerTable();
+        }
+
+        // Render Shadow Supplier Directory
+        function renderShadowDirectory() {
+            const container = document.getElementById("network-list");
+            container.innerHTML = "";
+
+            if (appState.network.length === 0) {
+                container.innerHTML = `<div class="text-[10px] italic text-slate-500 text-center py-4">No registered supply nodes on line.</div>`;
+                return;
+            }
+
+            appState.network.forEach(node => {
+                container.innerHTML += `
+                    <div class="p-2.5 bg-obsidian-950 border border-obsidian-800 rounded-xl text-xs flex justify-between items-center hover:border-slate-700 transition">
+                        <div>
+                            <p class="font-bold text-slate-200">${node.name}</p>
+                            <span class="text-[10px] text-slate-500 font-mono">${node.yard} // Prefer: ${node.preferred}</span>
+                        </div>
+                        <span class="w-2 h-2 rounded-full ${node.active ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-slate-700'}"></span>
+                    </div>
+                `;
+            });
+        }
+
+        // Add Mock New Supplier Location with dynamic cloud synchronization
+        async function addShadowNetworkContact() {
+            const names = ["Leong Scrap Corp", "Penang Metals", "Kuala Lumpur Recycle Co", "East Coast Industrial", "Syed Brothers Waste"];
+            const yards = ["Klang Port Depot", "Butterworth Yards", "Puchong Salvage", "Kuantan Terminal", "Ipoh Old Town"];
+            const metals = ["Copper Cables", "HMS Steel", "Aluminium Cuttings", "Lead-Acid Batteries", "Brass Castings"];
+
+            const randName = names[Math.floor(Math.random() * names.length)];
+            const randYard = yards[Math.floor(Math.random() * yards.length)];
+            const randMetal = metals[Math.floor(Math.random() * metals.length)];
+
+            const newContact = {
+                id: "net_" + Date.now(),
+                name: randName,
+                yard: randYard,
+                preferred: randMetal,
+                active: Math.random() > 0.3
+            };
+
+            if (db && userId) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', newContact.id), newContact);
+                    showNotification("New shadow yard node registered.");
+                } catch (e) {
+                    showNotification("Failed to synchronize new node", "error");
+                }
+            } else {
+                appState.network.unshift(newContact);
+                showNotification("New shadow yard node registered.");
+                renderShadowDirectory();
+            }
+        }
+
+        // Real-time Slider & Text Input Sync Bindings (Fixed decimal typing bug)
+        function initStateBindings() {
+            const parameters = [
+                { slider: 'slider-purchase', input: 'input-purchase', key: 'purchase' },
+                { slider: 'slider-sales', input: 'input-sales', key: 'sales' },
+                { slider: 'slider-logistics', input: 'input-logistics', key: 'logistics' },
+                { slider: 'slider-weight', input: 'input-weight', key: 'weight' }
+            ];
+
+            parameters.forEach(item => {
+                const sEl = document.getElementById(item.slider);
+                const iEl = document.getElementById(item.input);
+
+                // Slider Input: dragging slider directly updates numerical input field
+                sEl.addEventListener('input', (e) => {
+                    const numericValue = parseFloat(e.target.value);
+                    if (!isNaN(numericValue)) {
+                        appState[item.key] = numericValue;
+                        iEl.value = numericValue;
+                        runCoreCalculations();
+                    }
+                });
+
+                // Text Input: typing value doesn't overwrite input box characters dynamically, enabling safe decimals
+                iEl.addEventListener('input', (e) => {
+                    const valStr = e.target.value;
+                    if (valStr === '') return; // Let user clear input temporarily without erroring
+                    
+                    const numericValue = parseFloat(valStr);
+                    if (!isNaN(numericValue)) {
+                        appState[item.key] = numericValue;
+                        sEl.value = Math.min(numericValue, sEl.max);
+                        runCoreCalculations();
+                    }
+                });
+
+                // Blur Action: formats or normalizes values if the field is left empty
+                iEl.addEventListener('blur', (e) => {
+                    if (e.target.value === '' || isNaN(parseFloat(e.target.value))) {
+                        const fallback = appState[item.key] || 0;
+                        iEl.value = fallback;
+                        sEl.value = fallback;
+                    } else {
+                        // Safe normalization
+                        iEl.value = appState[item.key];
+                    }
+                    runCoreCalculations();
+                });
+            });
+
+            // Label text binding
+            const labelInput = document.getElementById("input-label");
+            labelInput.addEventListener("input", (e) => {
+                appState.label = e.target.value;
+            });
+        }
+
+        // Run Core Yard Calculations
+        function runCoreCalculations() {
+            const purchaseCost = appState.purchase;
+            const salesPrice = appState.sales;
+            const logisticsCost = appState.logistics;
+            const weightTonnes = appState.weight;
+
+            // Convert tonnes to kg (1 Tonne = 1000 kg)
+            const weightKg = weightTonnes * 1000;
+
+            const buyingCapital = purchaseCost * weightKg;
+            const totalLogistics = logisticsCost * weightKg;
+            const totalRevenue = salesPrice * weightKg;
+
+            const grossMarginPerKg = salesPrice - purchaseCost;
+            const netMarginPerKg = salesPrice - purchaseCost - logisticsCost;
+
+            const totalNetProfit = netMarginPerKg * weightKg;
+            const netMarginPercentage = salesPrice > 0 ? (netMarginPerKg / salesPrice) * 100 : 0;
+
+            // UI Render Injections
+            document.getElementById("out-capital").innerText = `RM ${Math.round(buyingCapital).toLocaleString()}`;
+            document.getElementById("out-freight").innerText = `RM ${Math.round(totalLogistics).toLocaleString()}`;
+            document.getElementById("out-gross-margin").innerText = `RM ${grossMarginPerKg.toFixed(2)} / kg`;
+            document.getElementById("out-net-margin").innerText = `RM ${netMarginPerKg.toFixed(2)} / kg`;
+            
+            // Main Output
+            const profitEl = document.getElementById("out-profit");
+            profitEl.innerText = `RM ${totalNetProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            if (totalNetProfit >= 0) {
+                profitEl.className = "text-lg md:text-xl font-mono text-emerald-400 font-black tracking-tight terminal-text-cyan";
+            } else {
+                profitEl.className = "text-lg md:text-xl font-mono text-smokyCrimson-400 font-black tracking-tight terminal-text-crimson";
+            }
+
+            document.getElementById("out-percentage").innerText = `${netMarginPercentage.toFixed(1)}%`;
+        }
+
+        // Reset system structures
+        async function resetAppToDefaults() {
+            if (db && userId) {
+                try {
+                    // Erase existing document logs in batch simulation
+                    appState.ledger.forEach(async (item) => {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id));
+                    });
+                    appState.voidedLedger.forEach(async (item) => {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', item.id));
+                    });
+                    appState.customPresets.forEach(async (item) => {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', item.id));
+                    });
+                    
+                    showNotification("Calibrations aligned. Synced defaults back online.");
+                } catch (e) {
+                    showNotification("Cloud clear transaction error", "error");
+                }
+            } else {
+                appState.label = "Iron Turning Swarf";
+                appState.purchase = 0.86;
+                appState.sales = 1.03;
+                appState.logistics = 0.05;
+                appState.weight = 15.0;
+                appState.ledger = [
+                    { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
+                    { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
+                ];
+                appState.voidedLedger = [];
+                appState.customPresets = [];
+                document.getElementById("voided-count").innerText = 0;
+                
+                document.getElementById("input-label").value = "Iron Turning Swarf";
+                loadPreset('iron');
+                renderLedgerTable();
+                renderShadowDirectory();
+                showNotification("Calibrators aligned with standard model benchmarks.");
+            }
+        }
+
+        // Mobile switches controller
+        function switchTab(tab) {
+            const tabDesk = document.getElementById("tab-desk");
+            const tabNetwork = document.getElementById("tab-network");
+            const panelDesk = document.getElementById("panel-desk");
+            const panelNetwork = document.getElementById("panel-network");
+
+            if (tab === 'desk') {
+                tabDesk.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-amberWhiskey-500 text-obsidian-950 transition font-mono";
+                tabNetwork.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 transition font-mono";
+                panelDesk.classList.remove("hidden");
+                panelDesk.classList.add("flex");
+                panelNetwork.classList.add("hidden");
+                panelNetwork.classList.remove("flex");
+            } else {
+                tabNetwork.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-amberWhiskey-500 text-obsidian-950 transition font-mono";
+                tabDesk.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 transition font-mono";
+                panelNetwork.classList.remove("hidden");
+                panelNetwork.classList.add("flex");
+                panelDesk.classList.add("hidden");
+                panelDesk.classList.remove("flex");
+            }
+        }
+
+        // CSV Export Feature
+        function exportBlackBookCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Timestamp,Asset Classification,Batch Weight (MT),Purchase Cost (RM/kg),Sales Revenue (RM/kg),Freight Cost (RM/kg),Net Profit Realized (RM)\r\n";
+            
+            appState.ledger.forEach(row => {
+                csvContent += `"${row.date}","${row.label}",${row.weight},${row.purchase},${row.sales},${row.logistics},${row.profit}\r\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "yard_intelligence_black_book_ledger.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification("Ledger export downloaded.");
+        }
+
+        // --- GEMINI WIRE AI INTERROGATION TERMINAL ---
+        async function transmitWireQuery() {
+            const inputEl = document.getElementById("wire-input");
+            const query = inputEl.value.trim();
+            if (!query) return;
+
+            appendWireMessage("You", query, true);
+            inputEl.value = "";
+
+            const loadingId = "loader_" + Date.now();
+            const consoleEl = document.getElementById("wire-console");
+            const loaderDiv = document.createElement("div");
+            loaderDiv.id = loadingId;
+            loaderDiv.className = "text-slate-500 italic animate-pulse";
+            loaderDiv.innerText = "// Decrypting signal transmissions...";
+            consoleEl.appendChild(loaderDiv);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+
+            const apiKey = ""; 
+            const systemPrompt = `You are "The Whispering Wire", a gritty, cynical, highly informed syndicate broker based in Malaysia. You specialize in the scrap metal black market, arbitrage strategies, logistics paths (Klang yards, Ipoh, Johor Bahru), and raw commodities (HMS 1/2, Swarf, Copper Wire, Aluminium formwork). Answer in a realistic, concise cinematic noir tone, delivering accurate calculations in Ringgit (RM) and Metric Tonnes (MT) based on current parameters (Material in focus: ${appState.label}, Buy cost: RM ${appState.purchase}, Sell target: RM ${appState.sales}). Keep answers brief, sharp, and highly thematic.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "No signal response. Tapped frequency is flatlined.";
+
+                document.getElementById(loadingId).remove();
+                appendWireMessage("The Whispering Wire", text);
+
+            } catch (err) {
+                if (document.getElementById(loadingId)) {
+                    document.getElementById(loadingId).remove();
+                }
+                appendWireMessage("The Whispering Wire", "Transmissions disrupted. Secure relay link offline. Retry.");
+            }
+        }
+
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                } catch (e) {}
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            throw new Error("Relay offline");
+        }
+
+        function appendWireMessage(sender, text, isUser = false) {
+            const consoleEl = document.getElementById("wire-console");
+            const prefix = isUser ? "[YOU]" : "[SYNDICATE_WIRE]";
+            const colorClass = isUser ? "text-cyan-400 font-bold" : "text-amberWhiskey-400 font-bold";
+            
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "space-y-0.5";
+            msgDiv.innerHTML = `<span class="${colorClass}">${prefix}:</span> <span class="text-slate-300 font-mono">${text}</span>`;
+            
+            consoleEl.appendChild(msgDiv);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // Bind operational interfaces globally to keep HTML inline attributes happy
+        window.loadPreset = loadPreset;
+        window.loadCustomPreset = loadCustomPreset;
+        window.commitToBlackBook = commitToBlackBook;
+        window.deleteLedgerRow = deleteLedgerRow;
+        window.restoreLedgerRow = restoreLedgerRow;
+        window.purgeLedgerRow = purgeLedgerRow;
+        window.toggleLedgerView = toggleLedgerView;
+        window.resetAppToDefaults = resetAppToDefaults;
+        window.switchTab = switchTab;
+        window.addShadowNetworkContact = addShadowNetworkContact;
+        window.exportBlackBookCSV = exportBlackBookCSV;
+        window.transmitWireQuery = transmitWireQuery;
+        window.showNotification = showNotification;
+        window.openAddProductModal = openAddProductModal;
+        window.closeAddProductModal = closeAddProductModal;
+        window.submitNewProduct = submitNewProduct;
+        window.deleteCustomPreset = deleteCustomPreset;
+        window.handleWireInputKeyPress = function(e) { if (e.key === 'Enter') transmitWireQuery(); };
+
+        // Execution kickoff
+        window.onload = function() {
+            initStateBindings();
+            runCoreCalculations();
+            initializeDatabase();
+        };
+    </script>
+</body>
+</html>
