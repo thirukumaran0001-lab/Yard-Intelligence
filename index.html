@@ -559,7 +559,39 @@
 
         // Initialize Database Sync Pipeline
         async function initializeDatabase() {
-            if (!hasFirebaseConfig) {
+            let firebaseConfig = null;
+
+            // 1. Try to fetch from serverless config endpoint first (Vercel runtime environment)
+            try {
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.firebaseConfig) {
+                        firebaseConfig = data.firebaseConfig;
+                        console.log("Live Firebase configuration loaded from cloud sync endpoint.");
+                    }
+                    if (data && data.geminiApiKey) {
+                        window.geminiApiKey = data.geminiApiKey;
+                        console.log("Gemini secure relay key registered from cloud environment.");
+                        // Re-initialize terminal to update state immediately
+                        initWireTerminal();
+                    }
+                }
+            } catch (err) {
+                console.log("Local deployment detected. Standard endpoint /api/config unavailable.");
+            }
+
+            // 2. Fallback to inline __firebase_config variable if cloud config isn't available
+            if (!firebaseConfig && typeof __firebase_config !== 'undefined' && __firebase_config) {
+                try {
+                    firebaseConfig = JSON.parse(__firebase_config);
+                    console.log("Firebase configuration loaded from local script environment.");
+                } catch (e) {
+                    console.error("Failed to parse local __firebase_config variable:", e);
+                }
+            }
+
+            if (!firebaseConfig) {
                 console.log("No Firebase config detected. Running securely in single-session client storage mode.");
                 updateSyncUI(false, "MEM-ONLY");
                 renderPresets();
@@ -569,7 +601,6 @@
             }
 
             try {
-                const firebaseConfig = JSON.parse(__firebase_config);
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -1475,7 +1506,7 @@
             // Keep this exact declaration so the deployment build tool can automatically provision it
             const apiKey = "";
             
-            const key = apiKey || localStorage.getItem("gemini_api_key");
+            const activeKey = apiKey || window.geminiApiKey || localStorage.getItem("gemini_api_key");
             const statusDot = document.getElementById("wire-status-dot");
             const consoleEl = document.getElementById("wire-console");
             const keyField = document.getElementById("wire-key-field");
@@ -1483,21 +1514,26 @@
             if (!consoleEl) return;
             consoleEl.innerHTML = "";
             
-            if (key) {
+            if (activeKey) {
                 if (statusDot) {
                     statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50";
                 }
-                if (keyField && !apiKey) {
-                    keyField.value = localStorage.getItem("gemini_api_key") || "";
-                }
-                // If apiKey is auto-provisioned by platform, show obfuscated status in settings field
-                if (apiKey && keyField) {
-                    keyField.value = "••••••••••••••••";
-                    keyField.disabled = true;
-                    const saveBtn = document.querySelector("#wire-key-config button[onclick='saveWireApiKey()']");
-                    const clearBtn = document.querySelector("#wire-key-config button[onclick='clearWireApiKey()']");
-                    if (saveBtn) saveBtn.disabled = true;
-                    if (clearBtn) clearBtn.disabled = true;
+                if (keyField) {
+                    if (apiKey || window.geminiApiKey) {
+                        keyField.value = "••••••••••••••••";
+                        keyField.disabled = true;
+                        const saveBtn = document.querySelector("#wire-key-config button[onclick='saveWireApiKey()']");
+                        const clearBtn = document.querySelector("#wire-key-config button[onclick='clearWireApiKey()']");
+                        if (saveBtn) saveBtn.disabled = true;
+                        if (clearBtn) clearBtn.disabled = true;
+                    } else {
+                        keyField.value = localStorage.getItem("gemini_api_key") || "";
+                        keyField.disabled = false;
+                        const saveBtn = document.querySelector("#wire-key-config button[onclick='saveWireApiKey()']");
+                        const clearBtn = document.querySelector("#wire-key-config button[onclick='clearWireApiKey()']");
+                        if (saveBtn) saveBtn.disabled = false;
+                        if (clearBtn) clearBtn.disabled = false;
+                    }
                 }
                 consoleEl.innerHTML = `
                     <div class="text-slate-500 italic">// Wire tap initialized. Live connection to Syndicate Intelligence secure.</div>
@@ -1561,7 +1597,7 @@
             // Keep this exact declaration so the deployment build tool can automatically provision it
             const apiKey = "";
             
-            const activeKey = apiKey || localStorage.getItem("gemini_api_key") || "";
+            const activeKey = apiKey || window.geminiApiKey || localStorage.getItem("gemini_api_key") || "";
             if (!activeKey) {
                 const configRow = document.getElementById("wire-key-config");
                 if (configRow) {
