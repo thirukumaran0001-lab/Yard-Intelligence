@@ -500,13 +500,23 @@
             }
         }
 
-        // App reactive configuration object with offline local backups preloaded immediately
-        window.appState = {
+        const savedCalc = getLocalBackup('calculator', {
             label: "Iron Turning Swarf",
             purchase: 0.86,
             sales: 1.03,
             logistics: 0.05,
             weight: 15.0,
+            currentSelectedPresetKey: 'iron'
+        });
+        currentSelectedPresetKey = savedCalc.currentSelectedPresetKey || 'iron';
+
+        // App reactive configuration object with offline local backups preloaded immediately
+        window.appState = {
+            label: savedCalc.label,
+            purchase: savedCalc.purchase,
+            sales: savedCalc.sales,
+            logistics: savedCalc.logistics,
+            weight: savedCalc.weight,
             
             ledger: getLocalBackup('ledger', [
                 { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
@@ -604,9 +614,49 @@
             }
         }
 
+        // Save current active calculator configuration state
+        function saveCalculatorState() {
+            const currentCalc = {
+                label: appState.label,
+                purchase: appState.purchase,
+                sales: appState.sales,
+                logistics: appState.logistics,
+                weight: appState.weight,
+                currentSelectedPresetKey: currentSelectedPresetKey
+            };
+            saveLocalBackup('calculator', currentCalc);
+            
+            if (db && userId) {
+                setDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'current_calculator'), currentCalc)
+                    .catch(e => console.error("Error saving calculator state:", e));
+            }
+        }
+
         // Setup real-time subscribers for active collections
-        function setupFirestoreSubscribers() {
+        async function setupFirestoreSubscribers() {
             if (!db || !userId) return;
+
+            // Onboarding check to prevent repopulating empty collections
+            const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+            try {
+                const userSnap = await getDoc(userDocRef);
+                if (!userSnap.exists() || !userSnap.data().initialized) {
+                    // Prepopulate empty user accounts with fallback defaults
+                    if (appState.ledger.length > 0) {
+                        for (const item of appState.ledger) {
+                            await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id), item);
+                        }
+                    }
+                    if (appState.network.length > 0) {
+                        for (const item of appState.network) {
+                            await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id), item);
+                        }
+                    }
+                    await setDoc(userDocRef, { initialized: true }, { merge: true });
+                }
+            } catch (err) {
+                console.error("Error running user onboarding sync:", err);
+            }
 
             // 1. Subscribe to Active Transactions Ledger
             const ledgerRef = collection(db, 'artifacts', appId, 'users', userId, 'ledger');
@@ -615,17 +665,9 @@
                 snapshot.forEach(doc => {
                     items.push({ id: doc.id, ...doc.data() });
                 });
-                
-                // Onboarding scenario: Prepopulate empty user accounts with fallback defaults
-                if (items.length === 0 && appState.ledger.length > 0) {
-                    appState.ledger.forEach(async (item) => {
-                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id), item);
-                    });
-                } else {
-                    appState.ledger = items;
-                    saveLocalBackup('ledger', items);
-                    renderLedgerTable();
-                }
+                appState.ledger = items;
+                saveLocalBackup('ledger', items);
+                renderLedgerTable();
             }, (err) => showNotification("Ledger listener lost synchronization", "error"));
 
             // 2. Subscribe to Voided Ledger Audit Trail
@@ -650,16 +692,9 @@
                 snapshot.forEach(doc => {
                     items.push({ id: doc.id, ...doc.data() });
                 });
-
-                if (items.length === 0 && appState.network.length > 0) {
-                    appState.network.forEach(async (item) => {
-                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id), item);
-                    });
-                } else {
-                    appState.network = items;
-                    saveLocalBackup('network', items);
-                    renderShadowDirectory();
-                }
+                appState.network = items;
+                saveLocalBackup('network', items);
+                renderShadowDirectory();
             }, (err) => showNotification("Network directory sync disconnected", "error"));
 
             // 4. Subscribe to Custom Presets / Products list
@@ -673,6 +708,43 @@
                 saveLocalBackup('customPresets', items);
                 renderPresets();
             }, (err) => showNotification("Products list sync error", "error"));
+
+            // 5. Subscribe to Current Calculator Configuration State
+            const configRef = doc(db, 'artifacts', appId, 'users', userId, 'config', 'current_calculator');
+            onSnapshot(configRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    if (data.label !== appState.label || 
+                        data.purchase !== appState.purchase || 
+                        data.sales !== appState.sales || 
+                        data.logistics !== appState.logistics || 
+                        data.weight !== appState.weight ||
+                        data.currentSelectedPresetKey !== currentSelectedPresetKey) {
+                        
+                        appState.label = data.label;
+                        appState.purchase = data.purchase;
+                        appState.sales = data.sales;
+                        appState.logistics = data.logistics;
+                        appState.weight = data.weight;
+                        currentSelectedPresetKey = data.currentSelectedPresetKey || 'iron';
+                        
+                        // Update UI fields
+                        document.getElementById("input-label").value = data.label;
+                        document.getElementById("input-purchase").value = data.purchase;
+                        document.getElementById("slider-purchase").value = data.purchase;
+                        document.getElementById("input-sales").value = data.sales;
+                        document.getElementById("slider-sales").value = data.sales;
+                        document.getElementById("input-logistics").value = data.logistics;
+                        document.getElementById("slider-logistics").value = data.logistics;
+                        document.getElementById("input-weight").value = data.weight;
+                        document.getElementById("slider-weight").value = data.weight;
+                        
+                        runCoreCalculations();
+                        renderPresets();
+                    }
+                }
+            }, (err) => console.error("Calculator state subscription offline:", err));
         }
 
         // Dynamic State-mutator operations supporting both Online Cloud storage and robust Local Persistence fallback
@@ -932,6 +1004,7 @@
 
             showNotification(`Loaded parameters for ${data.label}`);
             runCoreCalculations();
+            saveCalculatorState();
         }
 
         // UI rendering updates
@@ -1137,6 +1210,7 @@
                         appState[item.key] = numericValue;
                         iEl.value = numericValue;
                         runCoreCalculations();
+                        saveCalculatorState();
                     }
                 });
 
@@ -1150,6 +1224,7 @@
                         appState[item.key] = numericValue;
                         sEl.value = Math.min(numericValue, sEl.max);
                         runCoreCalculations();
+                        saveCalculatorState();
                     }
                 });
 
@@ -1164,6 +1239,7 @@
                         iEl.value = appState[item.key];
                     }
                     runCoreCalculations();
+                    saveCalculatorState();
                 });
             });
 
@@ -1172,6 +1248,7 @@
             if (labelInput) {
                 labelInput.addEventListener("input", (e) => {
                     appState.label = e.target.value;
+                    saveCalculatorState();
                 });
             }
         }
@@ -1234,6 +1311,9 @@
                         await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', item.id));
                     });
                     
+                    // Reset calculator state
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'current_calculator'));
+                    
                     showNotification("Calibrations aligned. Synced defaults back online.");
                 } catch (e) {
                     showNotification("Cloud clear transaction error", "error");
@@ -1256,6 +1336,7 @@
                 localStorage.removeItem('yard_intel_voidedLedger');
                 localStorage.removeItem('yard_intel_customPresets');
                 localStorage.removeItem('yard_intel_network');
+                localStorage.removeItem('yard_intel_calculator');
 
                 document.getElementById("voided-count").innerText = 0;
                 document.getElementById("input-label").value = "Iron Turning Swarf";
@@ -1519,6 +1600,18 @@
         // Safe module-level execution instead of relying entirely on window.onload
         renderPresets();
         initStateBindings();
+        
+        // Initialize UI values from appState loaded from local backup
+        document.getElementById("input-label").value = appState.label;
+        document.getElementById("input-purchase").value = appState.purchase;
+        document.getElementById("slider-purchase").value = appState.purchase;
+        document.getElementById("input-sales").value = appState.sales;
+        document.getElementById("slider-sales").value = appState.sales;
+        document.getElementById("input-logistics").value = appState.logistics;
+        document.getElementById("slider-logistics").value = appState.logistics;
+        document.getElementById("input-weight").value = appState.weight;
+        document.getElementById("slider-weight").value = appState.weight;
+
         runCoreCalculations();
         renderLedgerTable();
         renderShadowDirectory();
