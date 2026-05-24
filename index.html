@@ -247,16 +247,36 @@
                 <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-3 h-[380px] glowing-border-crimson">
                     <div class="flex items-center justify-between border-b border-obsidian-800 pb-2">
                         <h3 class="text-xs font-black tracking-widest text-smokyCrimson-400 uppercase font-mono flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-smokyCrimson-500 animate-ping"></span>
+                            <span id="wire-status-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse"></span>
                             The Whispering Wire
                         </h3>
-                        <span class="text-[9px] font-mono text-slate-500 uppercase">Gemini Intel Node</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-mono text-slate-500 uppercase">Gemini Intel Node</span>
+                            <button onclick="toggleWireKeyInput()" id="btn-wire-key" class="text-slate-400 hover:text-amberWhiskey-400 transition" title="Configure API Key">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- API Key Configuration Row -->
+                    <div id="wire-key-config" class="hidden bg-obsidian-950 p-2.5 rounded-xl border border-smokyCrimson-500/20 flex flex-col gap-2 transition duration-200">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider">Configure Secure Relay Link</span>
+                            <span class="text-[8px] font-mono text-slate-500 italic">Saved locally</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="password" id="wire-key-field" placeholder="Enter Gemini API Key..." 
+                                class="flex-grow bg-obsidian-900 border border-obsidian-800 rounded px-2 py-1 text-[10px] font-mono text-white placeholder-slate-600 focus:outline-none focus:border-smokyCrimson-500">
+                            <button onclick="saveWireApiKey()" class="bg-smokyCrimson-600 hover:bg-smokyCrimson-500 text-white px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase transition">Link</button>
+                            <button onclick="clearWireApiKey()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded text-[10px] font-mono font-bold uppercase transition">Clear</button>
+                        </div>
                     </div>
 
                     <!-- Conversation Window -->
                     <div id="wire-console" class="flex-grow overflow-y-auto bg-obsidian-950 p-3 rounded-xl border border-obsidian-800/60 font-mono text-[10.5px] leading-relaxed text-amberWhiskey-400/90 space-y-3">
-                        <div class="text-slate-500 italic">// Wire tap initialized. Ask the syndicate advisor about regional prices, arbitrage, or yard strategy...</div>
-                        <div class="text-slate-300"><span class="text-smokyCrimson-400 font-bold">[SYNDICATE_WIRE]:</span> Connection secure. Klang and Ipoh yards reporting heavy operations. What's the query?</div>
+                        <!-- Initialized via JavaScript -->
                     </div>
 
                     <!-- Input System -->
@@ -1198,10 +1218,105 @@
         }
 
         // --- GEMINI WIRE AI INTERROGATION TERMINAL ---
+        function initWireTerminal() {
+            // Keep this exact declaration so the deployment build tool can automatically provision it
+            const apiKey = "";
+            
+            const key = apiKey || localStorage.getItem("gemini_api_key");
+            const statusDot = document.getElementById("wire-status-dot");
+            const consoleEl = document.getElementById("wire-console");
+            const keyField = document.getElementById("wire-key-field");
+            
+            if (!consoleEl) return;
+            consoleEl.innerHTML = "";
+            
+            if (key) {
+                if (statusDot) {
+                    statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50";
+                }
+                if (keyField && !apiKey) {
+                    keyField.value = localStorage.getItem("gemini_api_key") || "";
+                }
+                // If apiKey is auto-provisioned by platform, show obfuscated status in settings field
+                if (apiKey && keyField) {
+                    keyField.value = "••••••••••••••••";
+                    keyField.disabled = true;
+                    const saveBtn = document.querySelector("#wire-key-config button[onclick='saveWireApiKey()']");
+                    const clearBtn = document.querySelector("#wire-key-config button[onclick='clearWireApiKey()']");
+                    if (saveBtn) saveBtn.disabled = true;
+                    if (clearBtn) clearBtn.disabled = true;
+                }
+                consoleEl.innerHTML = `
+                    <div class="text-slate-500 italic">// Wire tap initialized. Live connection to Syndicate Intelligence secure.</div>
+                    <div class="text-slate-300"><span class="text-smokyCrimson-400 font-bold">[SYNDICATE_WIRE]:</span> Connection secure. Klang and Ipoh yards reporting heavy operations. What's the query?</div>
+                `;
+            } else {
+                if (statusDot) {
+                    statusDot.className = "w-1.5 h-1.5 rounded-full bg-amberWhiskey-500 animate-pulse shadow-sm shadow-amberWhiskey-500/50";
+                }
+                consoleEl.innerHTML = `
+                    <div class="text-slate-500 italic">// Wire tap initialized. Secure relay node offline.</div>
+                    <div class="text-slate-400 italic bg-amberWhiskey-500/5 border border-amberWhiskey-500/10 p-2.5 rounded-lg space-y-1">
+                        <div class="font-bold text-amberWhiskey-400">// WARNING: API KEY MISSING</div>
+                        <div>A Gemini API Key is required to connect to the wire. Click the key icon at the top right of this terminal to configure your local credentials.</div>
+                    </div>
+                `;
+            }
+        }
+
+        function toggleWireKeyInput() {
+            const configRow = document.getElementById("wire-key-config");
+            if (configRow) {
+                configRow.classList.toggle("hidden");
+            }
+        }
+
+        function saveWireApiKey() {
+            const keyField = document.getElementById("wire-key-field");
+            if (!keyField) return;
+            const key = keyField.value.trim();
+            if (!key) {
+                showNotification("API key cannot be empty.", "error");
+                return;
+            }
+            localStorage.setItem("gemini_api_key", key);
+            showNotification("Gemini API key saved to local storage.");
+            
+            const configRow = document.getElementById("wire-key-config");
+            if (configRow) {
+                configRow.classList.add("hidden");
+            }
+            
+            initWireTerminal();
+        }
+
+        function clearWireApiKey() {
+            localStorage.removeItem("gemini_api_key");
+            const keyField = document.getElementById("wire-key-field");
+            if (keyField) {
+                keyField.value = "";
+            }
+            showNotification("API key removed.", "error");
+            initWireTerminal();
+        }
+
         async function transmitWireQuery() {
             const inputEl = document.getElementById("wire-input");
             const query = inputEl.value.trim();
             if (!query) return;
+
+            // Keep this exact declaration so the deployment build tool can automatically provision it
+            const apiKey = "";
+            
+            const activeKey = apiKey || localStorage.getItem("gemini_api_key") || "";
+            if (!activeKey) {
+                const configRow = document.getElementById("wire-key-config");
+                if (configRow) {
+                    configRow.classList.remove("hidden");
+                }
+                showNotification("Secure relay offline. Provision API key first.", "error");
+                return;
+            }
 
             appendWireMessage("You", query, true);
             inputEl.value = "";
@@ -1215,7 +1330,6 @@
             consoleEl.appendChild(loaderDiv);
             consoleEl.scrollTop = consoleEl.scrollHeight;
 
-            const apiKey = ""; 
             const systemPrompt = `You are "The Whispering Wire", a gritty, cynical, highly informed syndicate broker based in Malaysia. You specialize in the scrap metal black market, arbitrage strategies, logistics paths (Klang yards, Ipoh, Johor Bahru), and raw commodities (HMS 1/2, Swarf, Copper Wire, Aluminium formwork). Answer in a realistic, concise cinematic noir tone, delivering accurate calculations in Ringgit (RM) and Metric Tonnes (MT) based on current parameters (Material in focus: ${appState.label}, Buy cost: RM ${appState.purchase}, Sell target: RM ${appState.sales}). Keep answers brief, sharp, and highly thematic.`;
 
             const payload = {
@@ -1223,7 +1337,7 @@
                 systemInstruction: { parts: [{ text: systemPrompt }] }
             };
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`;
 
             try {
                 const response = await fetchWithRetry(url, {
@@ -1233,16 +1347,24 @@
                 });
 
                 const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "No signal response. Tapped frequency is flatlined.";
+                
+                if (document.getElementById(loadingId)) {
+                    document.getElementById(loadingId).remove();
+                }
 
-                document.getElementById(loadingId).remove();
+                if (!response.ok) {
+                    const errMsg = result.error?.message || "Invalid response from Gemini network.";
+                    throw new Error(errMsg);
+                }
+
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "No signal response. Tapped frequency is flatlined.";
                 appendWireMessage("The Whispering Wire", text);
 
             } catch (err) {
                 if (document.getElementById(loadingId)) {
                     document.getElementById(loadingId).remove();
                 }
-                appendWireMessage("The Whispering Wire", "Transmissions disrupted. Secure relay link offline. Retry.");
+                appendWireMessage("The Whispering Wire", `Transmissions disrupted: ${err.message || "Secure relay link offline"}. Retry.`);
             }
         }
 
@@ -1252,6 +1374,9 @@
                 try {
                     const response = await fetch(url, options);
                     if (response.ok) return response;
+                    if (response.status >= 400 && response.status < 500) {
+                        return response;
+                    }
                 } catch (e) {}
                 await new Promise(r => setTimeout(r, delay));
                 delay *= 2;
@@ -1292,6 +1417,9 @@
         window.deleteCustomPreset = deleteCustomPreset;
         window.runCoreCalculations = runCoreCalculations;
         window.handleWireInputKeyPress = function(e) { if (e.key === 'Enter') transmitWireQuery(); };
+        window.toggleWireKeyInput = toggleWireKeyInput;
+        window.saveWireApiKey = saveWireApiKey;
+        window.clearWireApiKey = clearWireApiKey;
 
         // Safe module-level execution instead of relying entirely on window.onload
         renderPresets();
@@ -1299,6 +1427,7 @@
         runCoreCalculations();
         renderLedgerTable();
         renderShadowDirectory();
+        initWireTerminal();
         
         // Start up secure cloud sync database connection
         initializeDatabase();
