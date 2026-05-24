@@ -496,7 +496,7 @@
         // Dynamic ESM Imports from Google CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getDatabase, ref, set, get, onValue, remove, child } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // Global State variables
         let db = null;
@@ -645,6 +645,7 @@
                 firebaseConfig = {
                     apiKey: "AIzaSyBCLiwI4qbfdGrSM3VylbPImCXAz0WX8Rg",
                     authDomain: "scrap-intelligence.firebaseapp.com",
+                    databaseURL: "https://scrap-intelligence-default-rtdb.firebaseio.com",
                     projectId: "scrap-intelligence",
                     storageBucket: "scrap-intelligence.firebasestorage.app",
                     messagingSenderId: "272747930381",
@@ -652,6 +653,10 @@
                     measurementId: "G-KPMTW16LL3"
                 };
                 console.log("Firebase configuration loaded from default project fallback.");
+            }
+
+            if (firebaseConfig && !firebaseConfig.databaseURL && firebaseConfig.projectId) {
+                firebaseConfig.databaseURL = `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
             }
 
             if (!firebaseConfig) {
@@ -666,7 +671,7 @@
             try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
-                db = getFirestore(app);
+                db = getDatabase(app);
 
                 updateSyncUI(true, "CONNECTING...");
 
@@ -682,7 +687,7 @@
                         // Use a stable shared key for anonymous sessions to ensure cross-device/cross-platform sync
                         userId = user.isAnonymous ? 'syndicate-member' : user.uid;
                         updateSyncUI(true, "SECURE CLOUD SYNC");
-                        setupFirestoreSubscribers();
+                        setupDatabaseSubscribers();
                     } else {
                         userId = null;
                         updateSyncUI(false, "OFFLINE FALLBACK");
@@ -725,56 +730,60 @@
             saveLocalBackup('calculator', currentCalc);
             
             if (db && userId) {
-                setDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'current_calculator'), currentCalc)
+                set(ref(db, `artifacts/${appId}/users/${userId}/config/current_calculator`), currentCalc)
                     .catch(e => console.error("Error saving calculator state:", e));
             }
         }
 
         // Setup real-time subscribers for active collections
-        async function setupFirestoreSubscribers() {
+        async function setupDatabaseSubscribers() {
             if (!db || !userId) return;
 
             // Onboarding check to prevent repopulating empty collections
-            const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+            const userInitializedRef = ref(db, `artifacts/${appId}/users/${userId}/initialized`);
             try {
-                const userSnap = await getDoc(userDocRef);
-                if (!userSnap.exists() || !userSnap.data().initialized) {
+                const initSnap = await get(userInitializedRef);
+                if (!initSnap.exists() || !initSnap.val()) {
                     // Prepopulate empty user accounts with fallback defaults
                     if (appState.ledger.length > 0) {
                         for (const item of appState.ledger) {
-                            await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id), item);
+                            await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${item.id}`), item);
                         }
                     }
                     if (appState.network.length > 0) {
                         for (const item of appState.network) {
-                            await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id), item);
+                            await set(ref(db, `artifacts/${appId}/users/${userId}/network/${item.id}`), item);
                         }
                     }
-                    await setDoc(userDocRef, { initialized: true }, { merge: true });
+                    await set(userInitializedRef, true);
                 }
             } catch (err) {
                 console.error("Error running user onboarding sync:", err);
             }
 
             // 1. Subscribe to Active Transactions Ledger
-            const ledgerRef = collection(db, 'artifacts', appId, 'users', userId, 'ledger');
-            onSnapshot(ledgerRef, (snapshot) => {
+            const ledgerRef = ref(db, `artifacts/${appId}/users/${userId}/ledger`);
+            onValue(ledgerRef, (snapshot) => {
                 let items = [];
-                snapshot.forEach(doc => {
-                    items.push({ id: doc.id, ...doc.data() });
-                });
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        items.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                }
                 appState.ledger = items;
                 saveLocalBackup('ledger', items);
                 renderLedgerTable();
             }, (err) => showNotification("Ledger listener lost synchronization", "error"));
 
             // 2. Subscribe to Voided Ledger Audit Trail
-            const voidedRef = collection(db, 'artifacts', appId, 'users', userId, 'voided_ledger');
-            onSnapshot(voidedRef, (snapshot) => {
+            const voidedRef = ref(db, `artifacts/${appId}/users/${userId}/voided_ledger`);
+            onValue(voidedRef, (snapshot) => {
                 let items = [];
-                snapshot.forEach(doc => {
-                    items.push({ id: doc.id, ...doc.data() });
-                });
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        items.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                }
                 appState.voidedLedger = items;
                 saveLocalBackup('voidedLedger', items);
                 
@@ -784,34 +793,38 @@
             }, (err) => showNotification("Audit log sync interrupted", "error"));
 
             // 3. Subscribe to Shadow Network Suppliers list
-            const networkRef = collection(db, 'artifacts', appId, 'users', userId, 'network');
-            onSnapshot(networkRef, (snapshot) => {
+            const networkRef = ref(db, `artifacts/${appId}/users/${userId}/network`);
+            onValue(networkRef, (snapshot) => {
                 let items = [];
-                snapshot.forEach(doc => {
-                    items.push({ id: doc.id, ...doc.data() });
-                });
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        items.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                }
                 appState.network = items;
                 saveLocalBackup('network', items);
                 renderShadowDirectory();
             }, (err) => showNotification("Network directory sync disconnected", "error"));
 
             // 4. Subscribe to Custom Presets / Products list
-            const presetsRef = collection(db, 'artifacts', appId, 'users', userId, 'presets');
-            onSnapshot(presetsRef, (snapshot) => {
+            const presetsRef = ref(db, `artifacts/${appId}/users/${userId}/presets`);
+            onValue(presetsRef, (snapshot) => {
                 let items = [];
-                snapshot.forEach(doc => {
-                    items.push({ id: doc.id, ...doc.data() });
-                });
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        items.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                }
                 appState.customPresets = items;
                 saveLocalBackup('customPresets', items);
                 renderPresets();
             }, (err) => showNotification("Products list sync error", "error"));
 
             // 5. Subscribe to Current Calculator Configuration State
-            const configRef = doc(db, 'artifacts', appId, 'users', userId, 'config', 'current_calculator');
-            onSnapshot(configRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
+            const configRef = ref(db, `artifacts/${appId}/users/${userId}/config/current_calculator`);
+            onValue(configRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
                     
                     if (data.label !== appState.label || 
                         data.purchase !== appState.purchase || 
@@ -878,7 +891,7 @@
 
             if (db && userId) {
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', newDeal.id), newDeal);
+                    await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${newDeal.id}`), newDeal);
                     showNotification(`Logged trade under ${appState.label}`);
                 } catch (e) {
                     showNotification("Database write error.", "error");
@@ -900,8 +913,8 @@
 
             if (db && userId) {
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', deletedRecord.id), deletedRecord);
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', id));
+                    await set(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger/${deletedRecord.id}`), deletedRecord);
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/ledger/${id}`));
                     showNotification("Deals updated. Item moved to Voided Log.");
                 } catch (e) {
                     showNotification("Failed updating database logs", "error");
@@ -926,8 +939,8 @@
 
             if (db && userId) {
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', restoredRecord.id), restoredRecord);
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', id));
+                    await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${restoredRecord.id}`), restoredRecord);
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger/${id}`));
                     showNotification("Restored deal logs back to Active Deals");
                 } catch (e) {
                     showNotification("Failed restoring database log", "error");
@@ -947,7 +960,7 @@
         async function purgeLedgerRow(id) {
             if (db && userId) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', id));
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger/${id}`));
                     showNotification("Audit item permanently purged", "error");
                 } catch (e) {
                     showNotification("Failed deleting database log", "error");
@@ -1001,7 +1014,7 @@
 
             if (db && userId) {
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', id), newProduct);
+                    await set(ref(db, `artifacts/${appId}/users/${userId}/presets/${id}`), newProduct);
                     showNotification(`New preset ${rawCode} synced successfully.`);
                 } catch (e) {
                     showNotification("Sync target failure", "error");
@@ -1061,7 +1074,7 @@
         async function deleteCustomPreset(id) {
             if (db && userId) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', id));
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/presets/${id}`));
                     showNotification("Product preset removed.", "error");
                 } catch (e) {
                     showNotification("Failed purging preset from database", "error");
@@ -1265,7 +1278,7 @@
 
             if (db && userId) {
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', newContact.id), newContact);
+                    await set(ref(db, `artifacts/${appId}/users/${userId}/network/${newContact.id}`), newContact);
                     showNotification("New shadow yard node registered.");
                 } catch (e) {
                     showNotification("Failed to synchronize new node", "error");
@@ -1284,7 +1297,7 @@
         async function deleteShadowNetworkContact(id) {
             if (db && userId) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', id));
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/network/${id}`));
                     showNotification("Shadow node removed.", "error");
                 } catch (e) {
                     showNotification("Failed purging node from database", "error");
@@ -1438,10 +1451,6 @@
             appState.sales = 1.03;
             appState.logistics = 0.05;
             appState.weight = 15.0;
-            const prevLedger = [...appState.ledger];
-            const prevVoided = [...appState.voidedLedger];
-            const prevPresets = [...appState.customPresets];
-            const prevNetwork = [...appState.network];
 
             appState.ledger = [...defaultLedger];
             appState.voidedLedger = [];
@@ -1476,36 +1485,30 @@
 
             if (db && userId) {
                 try {
-                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
-                    
                     // Temporarily set initialized to false to block snapshot listeners from overwriting arrays
-                    await setDoc(userDocRef, { initialized: false }, { merge: true });
+                    await set(ref(db, `artifacts/${appId}/users/${userId}/initialized`), false);
 
-                    // Run parallel subcollection deletions based on previous state
-                    const ledgerDeletes = prevLedger.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id)));
-                    const voidedDeletes = prevVoided.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', item.id)));
-                    const presetDeletes = prevPresets.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', item.id)));
-                    const networkDeletes = prevNetwork.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id)));
-                    
-                    await Promise.all([...ledgerDeletes, ...voidedDeletes, ...presetDeletes, ...networkDeletes]);
-
-                    // Reset cloud configuration document
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'current_calculator'));
+                    // Clear RTDB collections/paths
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/ledger`));
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger`));
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/presets`));
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/network`));
+                    await remove(ref(db, `artifacts/${appId}/users/${userId}/config/current_calculator`));
 
                     // Repopulate standard onboarding presets
                     for (const item of defaultLedger) {
-                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id), item);
+                        await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${item.id}`), item);
                     }
                     for (const item of defaultNetwork) {
-                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id), item);
+                        await set(ref(db, `artifacts/${appId}/users/${userId}/network/${item.id}`), item);
                     }
 
                     // Set initialized back to true
-                    await setDoc(userDocRef, { initialized: true }, { merge: true });
+                    await set(ref(db, `artifacts/${appId}/users/${userId}/initialized`), true);
 
                     showNotification("Calibrations aligned. Synced defaults back online.");
                 } catch (e) {
-                    console.error("Firestore reset failure:", e);
+                    console.error("RTDB reset failure:", e);
                     showNotification("Cloud clear transaction error", "error");
                 }
             } else {
