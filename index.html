@@ -582,7 +582,8 @@
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        userId = user.uid;
+                        // Use a stable shared key for anonymous sessions to ensure cross-device/cross-platform sync
+                        userId = user.isAnonymous ? 'syndicate-member' : user.uid;
                         updateSyncUI(true, "SECURE CLOUD SYNC");
                         setupFirestoreSubscribers();
                     } else {
