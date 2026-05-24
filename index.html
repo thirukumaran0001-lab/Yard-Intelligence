@@ -595,8 +595,11 @@
             const localConfig = localStorage.getItem("yard_intel_firebase_config");
             if (localConfig) {
                 try {
-                    firebaseConfig = JSON.parse(localConfig);
-                    console.log("Firebase configuration loaded from user localStorage settings.");
+                    const parsed = JSON.parse(localConfig);
+                    if (parsed && parsed.apiKey && parsed.projectId) {
+                        firebaseConfig = parsed;
+                        console.log("Firebase configuration loaded from user localStorage settings.");
+                    }
                 } catch (e) {
                     console.error("Failed parsing localStorage firebase config:", e);
                 }
@@ -608,7 +611,7 @@
                     const response = await fetch('/api/config');
                     if (response.ok) {
                         const data = await response.json();
-                        if (data && data.firebaseConfig) {
+                        if (data && data.firebaseConfig && data.firebaseConfig.apiKey && data.firebaseConfig.projectId) {
                             firebaseConfig = data.firebaseConfig;
                             console.log("Live Firebase configuration loaded from cloud sync endpoint.");
                         }
@@ -623,11 +626,15 @@
                     console.log("Local deployment detected. Standard endpoint /api/config unavailable.");
                 }
             }
+
             // 3. Fallback to inline __firebase_config variable if cloud config isn't available
             if (!firebaseConfig && typeof __firebase_config !== 'undefined' && __firebase_config) {
                 try {
-                    firebaseConfig = JSON.parse(__firebase_config);
-                    console.log("Firebase configuration loaded from local script environment.");
+                    const parsed = JSON.parse(__firebase_config);
+                    if (parsed && parsed.apiKey && parsed.projectId) {
+                        firebaseConfig = parsed;
+                        console.log("Firebase configuration loaded from local script environment.");
+                    }
                 } catch (e) {
                     console.error("Failed to parse local __firebase_config variable:", e);
                 }
