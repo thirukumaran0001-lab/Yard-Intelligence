@@ -623,7 +623,6 @@
                     console.log("Local deployment detected. Standard endpoint /api/config unavailable.");
                 }
             }
-
             // 3. Fallback to inline __firebase_config variable if cloud config isn't available
             if (!firebaseConfig && typeof __firebase_config !== 'undefined' && __firebase_config) {
                 try {
@@ -632,6 +631,20 @@
                 } catch (e) {
                     console.error("Failed to parse local __firebase_config variable:", e);
                 }
+            }
+
+            // 4. Default project hardcoded config fallback (Scrap Intelligence)
+            if (!firebaseConfig) {
+                firebaseConfig = {
+                    apiKey: "AIzaSyBCLiwI4qbfdGrSM3VylbPImCXAz0WX8Rg",
+                    authDomain: "scrap-intelligence.firebaseapp.com",
+                    projectId: "scrap-intelligence",
+                    storageBucket: "scrap-intelligence.firebasestorage.app",
+                    messagingSenderId: "272747930381",
+                    appId: "1:272747930381:web:62f231af1803d1dc598644",
+                    measurementId: "G-KPMTW16LL3"
+                };
+                console.log("Firebase configuration loaded from default project fallback.");
             }
 
             if (!firebaseConfig) {
