@@ -130,7 +130,7 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
             
             <!-- LEFT PANEL: Dynamic Calculators & Presets (7 Columns) -->
-            <section id="panel-desk" class="md:col-span-7 flex flex-col gap-4">
+            <section id="panel-desk" class="md:flex md:col-span-7 flex flex-col gap-4">
                 
                 <!-- Quick Loader Presets -->
                 <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-4 flex flex-col gap-3">
@@ -977,7 +977,14 @@
                 return;
             }
 
-            appState.network.forEach(node => {
+            // Sort by numerical part of ID descending to ensure newest registered nodes appear first
+            const sortedNetwork = [...appState.network].sort((a, b) => {
+                const numA = parseInt(a.id.replace('net_', '')) || 0;
+                const numB = parseInt(b.id.replace('net_', '')) || 0;
+                return numB - numA;
+            });
+
+            sortedNetwork.forEach(node => {
                 container.innerHTML += `
                     <div class="p-2.5 bg-obsidian-950 border border-obsidian-800 rounded-xl text-xs flex justify-between items-center hover:border-slate-700 transition">
                         <div>
@@ -1193,7 +1200,7 @@
                 tabDesk.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 transition font-mono";
                 panelNetwork.classList.remove("hidden");
                 panelNetwork.classList.add("flex");
-                panelDesk.className = "hidden";
+                panelDesk.classList.add("hidden");
                 panelDesk.classList.remove("flex");
             }
         }
