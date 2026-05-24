@@ -1325,51 +1325,93 @@
 
         // Reset system structures
         async function resetAppToDefaults() {
+            const defaultLedger = [
+                { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
+                { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
+            ];
+            const defaultNetwork = [
+                { id: "net_1", name: "Chuan Hock Metals", yard: "Klang Yard", preferred: "Copper Wire", active: true },
+                { id: "net_2", name: "Sin Lim Recycling", yard: "Ipoh Depot", preferred: "Iron Turning", active: true },
+                { id: "net_3", name: "Iskandar Scrap", yard: "JB Terminal", preferred: "Aluminium", active: false }
+            ];
+
+            // 1. Reset memory state to factory defaults
+            appState.label = "Iron Turning Swarf";
+            appState.purchase = 0.86;
+            appState.sales = 1.03;
+            appState.logistics = 0.05;
+            appState.weight = 15.0;
+            const prevLedger = [...appState.ledger];
+            const prevVoided = [...appState.voidedLedger];
+            const prevPresets = [...appState.customPresets];
+            const prevNetwork = [...appState.network];
+
+            appState.ledger = [...defaultLedger];
+            appState.voidedLedger = [];
+            appState.customPresets = [];
+            appState.network = [...defaultNetwork];
+
+            // 2. Clear offline persistence backups
+            localStorage.removeItem('yard_intel_ledger');
+            localStorage.removeItem('yard_intel_voidedLedger');
+            localStorage.removeItem('yard_intel_customPresets');
+            localStorage.removeItem('yard_intel_network');
+            localStorage.removeItem('yard_intel_calculator');
+
+            // 3. Reset UI inputs to defaults
+            document.getElementById("voided-count").innerText = 0;
+            document.getElementById("input-label").value = "Iron Turning Swarf";
+            currentSelectedPresetKey = 'iron';
+            
+            document.getElementById("input-purchase").value = 0.86;
+            document.getElementById("slider-purchase").value = 0.86;
+            document.getElementById("input-sales").value = 1.03;
+            document.getElementById("slider-sales").value = 1.03;
+            document.getElementById("input-logistics").value = 0.05;
+            document.getElementById("slider-logistics").value = 0.05;
+            document.getElementById("input-weight").value = 15.0;
+            document.getElementById("slider-weight").value = 15.0;
+
+            runCoreCalculations();
+            renderPresets();
+            renderLedgerTable();
+            renderShadowDirectory();
+
             if (db && userId) {
                 try {
-                    // Erase existing document logs in batch simulation
-                    appState.ledger.forEach(async (item) => {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id));
-                    });
-                    appState.voidedLedger.forEach(async (item) => {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', item.id));
-                    });
-                    appState.customPresets.forEach(async (item) => {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', item.id));
-                    });
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
                     
-                    // Reset calculator state
+                    // Temporarily set initialized to false to block snapshot listeners from overwriting arrays
+                    await setDoc(userDocRef, { initialized: false }, { merge: true });
+
+                    // Run parallel subcollection deletions based on previous state
+                    const ledgerDeletes = prevLedger.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id)));
+                    const voidedDeletes = prevVoided.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'voided_ledger', item.id)));
+                    const presetDeletes = prevPresets.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'presets', item.id)));
+                    const networkDeletes = prevNetwork.map(item => deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id)));
+                    
+                    await Promise.all([...ledgerDeletes, ...voidedDeletes, ...presetDeletes, ...networkDeletes]);
+
+                    // Reset cloud configuration document
                     await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'current_calculator'));
-                    
+
+                    // Repopulate standard onboarding presets
+                    for (const item of defaultLedger) {
+                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'ledger', item.id), item);
+                    }
+                    for (const item of defaultNetwork) {
+                        await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'network', item.id), item);
+                    }
+
+                    // Set initialized back to true
+                    await setDoc(userDocRef, { initialized: true }, { merge: true });
+
                     showNotification("Calibrations aligned. Synced defaults back online.");
                 } catch (e) {
+                    console.error("Firestore reset failure:", e);
                     showNotification("Cloud clear transaction error", "error");
                 }
             } else {
-                appState.label = "Iron Turning Swarf";
-                appState.purchase = 0.86;
-                appState.sales = 1.03;
-                appState.logistics = 0.05;
-                appState.weight = 15.0;
-                appState.ledger = [
-                    { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
-                    { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
-                ];
-                appState.voidedLedger = [];
-                appState.customPresets = [];
-                
-                // Clear offline persistence back up
-                localStorage.removeItem('yard_intel_ledger');
-                localStorage.removeItem('yard_intel_voidedLedger');
-                localStorage.removeItem('yard_intel_customPresets');
-                localStorage.removeItem('yard_intel_network');
-                localStorage.removeItem('yard_intel_calculator');
-
-                document.getElementById("voided-count").innerText = 0;
-                document.getElementById("input-label").value = "Iron Turning Swarf";
-                loadPreset('iron');
-                renderLedgerTable();
-                renderShadowDirectory();
                 showNotification("Calibrations aligned with standard benchmarks.");
             }
         }
