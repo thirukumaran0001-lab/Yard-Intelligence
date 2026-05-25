@@ -516,6 +516,37 @@
         let currentLedgerView = 'active'; // 'active' or 'voided'
         let currentSelectedPresetKey = 'iron';
 
+        // Helper functions for formatting numbers based on scale
+        function formatCurrency(val) {
+            const absVal = Math.abs(val);
+            if (absVal < 10000) {
+                return val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false});
+            } else {
+                return val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true});
+            }
+        }
+
+        function formatWholeCurrency(val) {
+            const absVal = Math.abs(val);
+            if (absVal < 10000) {
+                return val.toLocaleString(undefined, {useGrouping: false});
+            } else {
+                return val.toLocaleString(undefined, {useGrouping: true});
+            }
+        }
+
+        function adjustSliderMaxes(purchase = null, sales = null, logistics = null, weight = null) {
+            const pSlider = document.getElementById("slider-purchase");
+            const sSlider = document.getElementById("slider-sales");
+            const lSlider = document.getElementById("slider-logistics");
+            const wSlider = document.getElementById("slider-weight");
+
+            if (pSlider) pSlider.max = Math.max(40, purchase !== null ? purchase : 40);
+            if (sSlider) sSlider.max = Math.max(45, sales !== null ? sales : 45);
+            if (lSlider) lSlider.max = Math.max(3, logistics !== null ? logistics : 3);
+            if (wSlider) wSlider.max = Math.max(100, weight !== null ? weight : 100);
+        }
+
         const hasFirebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config;
 
         // Static Default Preset Catalog
@@ -855,6 +886,9 @@
                         appState.supplier = data.supplier || "";
                         currentSelectedPresetKey = data.currentSelectedPresetKey || 'iron';
                         
+                        // Dynamically adjust slider maxes to support big values from sync
+                        adjustSliderMaxes(data.purchase, data.sales, data.logistics, data.weight);
+
                         // Update UI fields if they are not currently focused by the user
                         const activeEl = document.activeElement;
                         if (activeEl !== document.getElementById("input-label")) {
@@ -1133,6 +1167,8 @@
             appState.logistics = data.logistics;
             appState.weight = data.weight;
 
+            adjustSliderMaxes(data.purchase, data.sales, data.logistics, data.weight);
+
             document.getElementById("input-label").value = data.label;
             document.getElementById("input-purchase").value = data.purchase;
             document.getElementById("slider-purchase").value = data.purchase;
@@ -1199,7 +1235,7 @@
                         <td class="py-3 px-3 font-mono">${row.weight.toFixed(2)} MT</td>
                         <td class="py-3 px-3 font-mono">RM ${row.purchase.toFixed(2)} / RM ${row.sales.toFixed(2)}</td>
                         <td class="py-3 px-3 font-mono text-slate-400">RM ${row.logistics.toFixed(2)}</td>
-                        <td class="py-3 px-3 font-mono ${profitClass}">RM ${row.profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false})}</td>
+                        <td class="py-3 px-3 font-mono ${profitClass}">RM ${formatCurrency(row.profit)}</td>
                         <td class="py-3 px-3 text-right">
                             ${actionBtnHTML}
                         </td>
@@ -1380,7 +1416,13 @@
                     const numericValue = parseFloat(valStr);
                     if (!isNaN(numericValue)) {
                         appState[item.key] = numericValue;
-                        sEl.value = Math.min(numericValue, sEl.max);
+                        
+                        // Dynamically adjust slider max if input exceeds it
+                        const currentMax = parseFloat(sEl.max);
+                        if (numericValue > currentMax) {
+                            sEl.max = numericValue;
+                        }
+                        sEl.value = numericValue;
                         runCoreCalculations();
                     }
                 });
@@ -1454,15 +1496,15 @@
             const netMarginPercentage = salesPrice > 0 ? (netMarginPerKg / salesPrice) * 100 : 0;
 
             // UI Render Injections
-            document.getElementById("out-capital").innerText = `RM ${Math.round(buyingCapital).toLocaleString(undefined, {useGrouping: false})}`;
-            document.getElementById("out-freight").innerText = `RM ${Math.round(totalLogistics).toLocaleString(undefined, {useGrouping: false})}`;
+            document.getElementById("out-capital").innerText = `RM ${formatWholeCurrency(Math.round(buyingCapital))}`;
+            document.getElementById("out-freight").innerText = `RM ${formatWholeCurrency(Math.round(totalLogistics))}`;
             document.getElementById("out-gross-margin").innerText = `RM ${grossMarginPerKg.toFixed(2)} / kg`;
             document.getElementById("out-net-margin").innerText = `RM ${netMarginPerKg.toFixed(2)} / kg`;
             
             // Main Output
             const profitEl = document.getElementById("out-profit");
             if (profitEl) {
-                profitEl.innerText = `RM ${totalNetProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false})}`;
+                profitEl.innerText = `RM ${formatCurrency(totalNetProfit)}`;
                 if (totalNetProfit >= 0) {
                     profitEl.className = "text-lg md:text-xl font-mono text-emerald-400 font-black tracking-tight terminal-text-cyan";
                 } else {
@@ -1495,6 +1537,8 @@
             appState.logistics = 0.05;
             appState.weight = 15.0;
             appState.supplier = "";
+
+            adjustSliderMaxes();
 
             appState.ledger = [...defaultLedger];
             appState.voidedLedger = [];
