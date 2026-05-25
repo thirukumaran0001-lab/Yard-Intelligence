@@ -1199,7 +1199,7 @@
                         <td class="py-3 px-3 font-mono">${row.weight.toFixed(2)} MT</td>
                         <td class="py-3 px-3 font-mono">RM ${row.purchase.toFixed(2)} / RM ${row.sales.toFixed(2)}</td>
                         <td class="py-3 px-3 font-mono text-slate-400">RM ${row.logistics.toFixed(2)}</td>
-                        <td class="py-3 px-3 font-mono ${profitClass}">RM ${row.profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="py-3 px-3 font-mono ${profitClass}">RM ${row.profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false})}</td>
                         <td class="py-3 px-3 text-right">
                             ${actionBtnHTML}
                         </td>
@@ -1454,15 +1454,15 @@
             const netMarginPercentage = salesPrice > 0 ? (netMarginPerKg / salesPrice) * 100 : 0;
 
             // UI Render Injections
-            document.getElementById("out-capital").innerText = `RM ${Math.round(buyingCapital).toLocaleString()}`;
-            document.getElementById("out-freight").innerText = `RM ${Math.round(totalLogistics).toLocaleString()}`;
+            document.getElementById("out-capital").innerText = `RM ${Math.round(buyingCapital).toLocaleString(undefined, {useGrouping: false})}`;
+            document.getElementById("out-freight").innerText = `RM ${Math.round(totalLogistics).toLocaleString(undefined, {useGrouping: false})}`;
             document.getElementById("out-gross-margin").innerText = `RM ${grossMarginPerKg.toFixed(2)} / kg`;
             document.getElementById("out-net-margin").innerText = `RM ${netMarginPerKg.toFixed(2)} / kg`;
             
             // Main Output
             const profitEl = document.getElementById("out-profit");
             if (profitEl) {
-                profitEl.innerText = `RM ${totalNetProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                profitEl.innerText = `RM ${totalNetProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false})}`;
                 if (totalNetProfit >= 0) {
                     profitEl.className = "text-lg md:text-xl font-mono text-emerald-400 font-black tracking-tight terminal-text-cyan";
                 } else {
