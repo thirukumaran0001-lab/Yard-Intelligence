@@ -1199,7 +1199,7 @@
                         <td class="py-3 px-3 font-mono">${row.weight.toFixed(2)} MT</td>
                         <td class="py-3 px-3 font-mono">RM ${row.purchase.toFixed(2)} / RM ${row.sales.toFixed(2)}</td>
                         <td class="py-3 px-3 font-mono text-slate-400">RM ${row.logistics.toFixed(2)}</td>
-                        <td class="py-3 px-3 font-mono ${profitClass}">RM ${row.profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="py-3 px-3 font-mono ${profitClass}">RM ${row.profit.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
                         <td class="py-3 px-3 text-right">
                             ${actionBtnHTML}
                         </td>
