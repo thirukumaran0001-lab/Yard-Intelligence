@@ -158,11 +158,20 @@
                         <span class="text-[10px] text-slate-500 font-mono">Fine-Tune Live Valuation</span>
                     </div>
 
-                    <!-- Material Name -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 font-mono mb-1">Custom Material Label</label>
-                        <input type="text" id="input-label" value="Iron Turning Swarf" 
-                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white uppercase tracking-wider focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    <!-- Material Name & Supplier -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 font-mono mb-1">Custom Material Label</label>
+                            <input type="text" id="input-label" value="Iron Turning Swarf" 
+                                class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white uppercase tracking-wider focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 font-mono mb-1">Supplier / Yard Node</label>
+                            <select id="input-supplier" 
+                                class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white uppercase tracking-wider focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                                <option value="">-- SELECT SHADOW YARD NODE --</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -344,6 +353,7 @@
                         <tr>
                             <th class="py-2.5 px-3">Timestamp</th>
                             <th class="py-2.5 px-3">Asset Classification</th>
+                            <th class="py-2.5 px-3">Supplier Node</th>
                             <th class="py-2.5 px-3">Batch Weight</th>
                             <th class="py-2.5 px-3">Buy / Sell (RM/kg)</th>
                             <th class="py-2.5 px-3">Freight (RM/kg)</th>
@@ -539,6 +549,7 @@
             sales: 1.03,
             logistics: 0.05,
             weight: 15.0,
+            supplier: "",
             currentSelectedPresetKey: 'iron'
         });
         currentSelectedPresetKey = savedCalc.currentSelectedPresetKey || 'iron';
@@ -550,10 +561,11 @@
             sales: savedCalc.sales,
             logistics: savedCalc.logistics,
             weight: savedCalc.weight,
+            supplier: savedCalc.supplier || "",
             
             ledger: getLocalBackup('ledger', [
-                { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
-                { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
+                { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", supplier: "Sin Lim Recycling", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
+                { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", supplier: "Chuan Hock Metals", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
             ]),
             voidedLedger: getLocalBackup('voidedLedger', []),
             customPresets: getLocalBackup('customPresets', []),
@@ -725,6 +737,7 @@
                 sales: appState.sales,
                 logistics: appState.logistics,
                 weight: appState.weight,
+                supplier: appState.supplier || "",
                 currentSelectedPresetKey: currentSelectedPresetKey
             };
             saveLocalBackup('calculator', currentCalc);
@@ -831,6 +844,7 @@
                         data.sales !== appState.sales || 
                         data.logistics !== appState.logistics || 
                         data.weight !== appState.weight ||
+                        data.supplier !== appState.supplier ||
                         data.currentSelectedPresetKey !== currentSelectedPresetKey) {
                         
                         appState.label = data.label;
@@ -838,12 +852,16 @@
                         appState.sales = data.sales;
                         appState.logistics = data.logistics;
                         appState.weight = data.weight;
+                        appState.supplier = data.supplier || "";
                         currentSelectedPresetKey = data.currentSelectedPresetKey || 'iron';
                         
                         // Update UI fields if they are not currently focused by the user
                         const activeEl = document.activeElement;
                         if (activeEl !== document.getElementById("input-label")) {
                             document.getElementById("input-label").value = data.label;
+                        }
+                        if (activeEl !== document.getElementById("input-supplier")) {
+                            document.getElementById("input-supplier").value = data.supplier || "";
                         }
                         if (activeEl !== document.getElementById("input-purchase") && activeEl !== document.getElementById("slider-purchase")) {
                             document.getElementById("input-purchase").value = data.purchase;
@@ -882,6 +900,7 @@
                 id: "tr_" + Date.now(),
                 date: dateStr,
                 label: appState.label.toUpperCase(),
+                supplier: appState.supplier || "",
                 weight: appState.weight,
                 purchase: appState.purchase,
                 sales: appState.sales,
@@ -1176,6 +1195,7 @@
                     <tr class="hover:bg-obsidian-900/60 transition duration-150">
                         <td class="py-3 px-3 text-slate-500 text-[10px]">${row.date}</td>
                         <td class="py-3 px-3 text-slate-200 font-bold ${currentLedgerView === 'voided' ? 'line-through text-slate-500' : ''}">${row.label}</td>
+                        <td class="py-3 px-3 text-slate-300 font-semibold">${row.supplier || '<span class="text-slate-600">-</span>'}</td>
                         <td class="py-3 px-3 font-mono">${row.weight.toFixed(2)} MT</td>
                         <td class="py-3 px-3 font-mono">RM ${row.purchase.toFixed(2)} / RM ${row.sales.toFixed(2)}</td>
                         <td class="py-3 px-3 font-mono text-slate-400">RM ${row.logistics.toFixed(2)}</td>
@@ -1209,6 +1229,20 @@
             const container = document.getElementById("network-list");
             if (!container) return;
             container.innerHTML = "";
+
+            // Populate the dropdown in calculator
+            const supplierSelect = document.getElementById("input-supplier");
+            if (supplierSelect) {
+                const currentVal = supplierSelect.value || appState.supplier || "";
+                supplierSelect.innerHTML = `<option value="">-- SELECT SHADOW YARD NODE --</option>`;
+                appState.network.forEach(node => {
+                    const option = document.createElement("option");
+                    option.value = node.name;
+                    option.text = `${node.name} (${node.yard})`;
+                    supplierSelect.appendChild(option);
+                });
+                supplierSelect.value = currentVal;
+            }
 
             if (appState.network.length === 0) {
                 container.innerHTML = `<div class="text-[10px] italic text-slate-500 text-center py-4">No registered supply nodes on line.</div>`;
@@ -1388,6 +1422,15 @@
                     }
                 });
             }
+
+            // Supplier dropdown binding
+            const supplierSelect = document.getElementById("input-supplier");
+            if (supplierSelect) {
+                supplierSelect.addEventListener("change", (e) => {
+                    appState.supplier = e.target.value;
+                    saveCalculatorState();
+                });
+            }
         }
 
         // Run Core Yard Calculations
@@ -1436,8 +1479,8 @@
         // Reset system structures
         async function resetAppToDefaults() {
             const defaultLedger = [
-                { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
-                { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
+                { id: "tr_1", date: "24-05 14:11", label: "IRON TURNING SWARF", supplier: "Sin Lim Recycling", weight: 15.0, purchase: 0.86, sales: 1.03, logistics: 0.05, profit: 1800.00 },
+                { id: "tr_2", date: "24-05 15:32", label: "ALUMINIUM FORMWORK", supplier: "Chuan Hock Metals", weight: 8.0, purchase: 11.70, sales: 13.90, logistics: 0.15, profit: 16400.00 }
             ];
             const defaultNetwork = [
                 { id: "net_1", name: "Chuan Hock Metals", yard: "Klang Yard", preferred: "Copper Wire", active: true },
@@ -1451,6 +1494,7 @@
             appState.sales = 1.03;
             appState.logistics = 0.05;
             appState.weight = 15.0;
+            appState.supplier = "";
 
             appState.ledger = [...defaultLedger];
             appState.voidedLedger = [];
@@ -1467,6 +1511,9 @@
             // 3. Reset UI inputs to defaults
             document.getElementById("voided-count").innerText = 0;
             document.getElementById("input-label").value = "Iron Turning Swarf";
+            if (document.getElementById("input-supplier")) {
+                document.getElementById("input-supplier").value = "";
+            }
             currentSelectedPresetKey = 'iron';
             
             document.getElementById("input-purchase").value = 0.86;
@@ -1551,10 +1598,10 @@
         // CSV Export Feature
         function exportBlackBookCSV() {
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Timestamp,Asset Classification,Batch Weight (MT),Purchase Cost (RM/kg),Sales Revenue (RM/kg),Freight Cost (RM/kg),Net Profit Realized (RM)\r\n";
+            csvContent += "Timestamp,Asset Classification,Supplier Node,Batch Weight (MT),Purchase Cost (RM/kg),Sales Revenue (RM/kg),Freight Cost (RM/kg),Net Profit Realized (RM)\r\n";
             
             appState.ledger.forEach(row => {
-                csvContent += `"${row.date}","${row.label}",${row.weight},${row.purchase},${row.sales},${row.logistics},${row.profit}\r\n`;
+                csvContent += `"${row.date}","${row.label}","${row.supplier || ''}",${row.weight},${row.purchase},${row.sales},${row.logistics},${row.profit}\r\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -1856,6 +1903,9 @@
         runCoreCalculations();
         renderLedgerTable();
         renderShadowDirectory();
+        if (document.getElementById("input-supplier")) {
+            document.getElementById("input-supplier").value = appState.supplier || "";
+        }
         initWireTerminal();
         
         // Start up secure cloud sync database connection
