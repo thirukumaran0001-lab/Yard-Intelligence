@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc && echo 'Deploying static files and serverless functions'"
+    "build": "tsc auth.ts firebase-cdn.d.ts --target es2022 --module esnext --moduleResolution bundler --skipLibCheck --ignoreConfig && echo 'Deploying static files and serverless functions'"
   },
   "dependencies": {
     "firebase": "^12.13.0"

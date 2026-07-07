@@ -103,21 +103,170 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <span onclick="openFirebaseConfigModal()" class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 font-mono transition" title="Configure Cloud Sync Link">
-                <span id="sync-indicator-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                <span id="sync-indicator-text">MEM-ONLY</span>
-            </span>
-            <button onclick="refreshData()" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800 transition font-mono uppercase flex items-center gap-1.5" title="Fetch Latest Cloud Data">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3 text-slate-400">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                </svg>
-                RE-CALIBRATE
-            </button>
+            <!-- Sync indicators and actions -->
+            <div id="header-actions" class="hidden flex items-center gap-2">
+                <span onclick="openFirebaseConfigModal()" class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 font-mono transition" title="Configure Cloud Sync Link">
+                    <span id="sync-indicator-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                    <span id="sync-indicator-text">MEM-ONLY</span>
+                </span>
+                <button onclick="refreshData()" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800 transition font-mono uppercase flex items-center gap-1.5" title="Fetch Latest Cloud Data">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3 text-slate-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    RE-CALIBRATE
+                </button>
+            </div>
+            
+            <!-- User Profile and Logout -->
+            <div id="header-profile" class="hidden flex items-center gap-2 border-l border-obsidian-800 pl-3">
+                <div class="flex flex-col text-right">
+                    <span id="user-display-email" class="text-[9px] font-mono text-slate-400 truncate max-w-[150px]">user@syndicate.org</span>
+                    <span class="text-[8px] font-mono text-amberWhiskey-500 font-bold uppercase tracking-wider">AUTH_NODE</span>
+                </div>
+                <button onclick="handleSignOut()" class="px-2 py-1.5 rounded-lg text-[9px] font-bold bg-smokyCrimson-600 hover:bg-smokyCrimson-500 text-white transition font-mono uppercase" title="Sign Out of Syndicate Node">
+                    LOGOUT
+                </button>
+            </div>
         </div>
     </header>
 
+    <!-- Authentication Container (Sleek Terminal Gateway) -->
+    <div id="auth-container" class="flex-grow flex items-center justify-center p-4 min-h-[80vh]">
+        <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl w-full max-w-md p-6 md:p-8 shadow-2xl glowing-border-amber relative">
+            <!-- Screen Header -->
+            <div class="flex items-center gap-3 border-b border-obsidian-800 pb-4 mb-6">
+                <div class="p-2.5 bg-amberWhiskey-500/10 rounded-xl border border-amberWhiskey-500/20 text-amberWhiskey-500 animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="auth-title" class="text-sm md:text-base font-black tracking-widest text-white uppercase font-mono">Secure Node Access</h2>
+                    <p id="auth-subtitle" class="text-[10px] text-amberWhiskey-400 uppercase tracking-wider font-mono">// Port 8080 // Syndicate Encryption</p>
+                </div>
+            </div>
+
+            <!-- Loader / Busy Panel -->
+            <div id="auth-loading" class="hidden flex flex-col items-center justify-center py-8 space-y-3 font-mono text-xs">
+                <div class="w-8 h-8 border-2 border-amberWhiskey-500 border-t-transparent rounded-full animate-spin"></div>
+                <div id="auth-loading-text" class="text-slate-400 animate-pulse">// Authenticating node access...</div>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="auth-error-container" class="hidden bg-smokyCrimson-500/10 border border-smokyCrimson-500/25 p-3.5 rounded-xl mb-6 glowing-border-crimson">
+                <div class="text-[10px] font-mono font-black text-smokyCrimson-400 uppercase tracking-wider mb-1">// ACCESS FAULT DETECTED //</div>
+                <div id="auth-error-msg" class="text-xs font-mono text-slate-300">Invalid authorization credentials.</div>
+            </div>
+
+            <!-- Success Banner (for Password Reset) -->
+            <div id="auth-success-container" class="hidden bg-emerald-500/10 border border-emerald-500/25 p-3.5 rounded-xl mb-6">
+                <div class="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-wider mb-1">// SIGNAL TRANSMITTED //</div>
+                <div id="auth-success-msg" class="text-xs font-mono text-slate-300">Password reset signal dispatched to your inbox.</div>
+            </div>
+
+            <!-- Forms Container -->
+            <div id="auth-forms">
+                <!-- SIGN IN FORM -->
+                <form id="form-signin" onsubmit="handleSignInSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1.5">Node Email Address</label>
+                        <input type="email" id="signin-email" required placeholder="name@syndicate.org" 
+                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white placeholder-slate-750 focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono">Access Keycode</label>
+                            <button type="button" onclick="showAuthView('forgot')" class="text-[9px] text-amberWhiskey-400 hover:text-amberWhiskey-300 transition font-mono uppercase font-semibold">Forgot Key?</button>
+                        </div>
+                        <input type="password" id="signin-password" required placeholder="••••••••••••" 
+                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white placeholder-slate-750 focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amberWhiskey-600 to-amberWhiskey-400 hover:from-amberWhiskey-500 hover:to-amberWhiskey-300 text-obsidian-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-amberWhiskey-500/10 font-mono">
+                        Initialize Connection
+                    </button>
+                    <div class="relative flex py-3 items-center">
+                        <div class="flex-grow border-t border-obsidian-850"></div>
+                        <span class="flex-shrink mx-4 text-[9px] text-slate-500 font-mono uppercase">OR SECURE LINK</span>
+                        <div class="flex-grow border-t border-obsidian-850"></div>
+                    </div>
+                    <button type="button" onclick="handleGoogleSignIn()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 border border-slate-850 hover:border-slate-700 text-slate-350 text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-2 font-mono">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                        </svg>
+                        Google Auth Link
+                    </button>
+                    <div class="text-center mt-4">
+                        <span class="text-[10px] text-slate-500 font-mono">New Node? </span>
+                        <button type="button" onclick="showAuthView('signup')" class="text-[10px] text-amberWhiskey-400 hover:text-amberWhiskey-300 font-mono uppercase font-semibold">Register Credentials</button>
+                    </div>
+                </form>
+
+                <!-- SIGN UP FORM -->
+                <form id="form-signup" onsubmit="handleSignUpSubmit(event)" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1.5">Register Email Address</label>
+                        <input type="email" id="signup-email" required placeholder="name@syndicate.org" 
+                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white placeholder-slate-750 focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1.5">Select Access Keycode</label>
+                        <input type="password" id="signup-password" required placeholder="Minimum 6 characters" 
+                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white placeholder-slate-750 focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1.5">Confirm Access Keycode</label>
+                        <input type="password" id="signup-confirm-password" required placeholder="Confirm keycode" 
+                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white placeholder-slate-750 focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amberWhiskey-600 to-amberWhiskey-400 hover:from-amberWhiskey-500 hover:to-amberWhiskey-300 text-obsidian-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-amberWhiskey-500/10 font-mono">
+                        Register Node Connection
+                    </button>
+                    <div class="relative flex py-3 items-center">
+                        <div class="flex-grow border-t border-obsidian-850"></div>
+                        <span class="flex-shrink mx-4 text-[9px] text-slate-500 font-mono uppercase">OR SECURE LINK</span>
+                        <div class="flex-grow border-t border-obsidian-850"></div>
+                    </div>
+                    <button type="button" onclick="handleGoogleSignIn()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 border border-slate-850 hover:border-slate-700 text-slate-350 text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-2 font-mono">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                        </svg>
+                        Google Auth Link
+                    </button>
+                    <div class="text-center mt-4">
+                        <span class="text-[10px] text-slate-500 font-mono">Already registered? </span>
+                        <button type="button" onclick="showAuthView('signin')" class="text-[10px] text-amberWhiskey-400 hover:text-amberWhiskey-300 font-mono uppercase font-semibold">Sign In</button>
+                    </div>
+                </form>
+
+                <!-- FORGOT PASSWORD FORM -->
+                <form id="form-forgot" onsubmit="handleForgotSubmit(event)" class="hidden space-y-4">
+                    <p class="text-[11px] text-slate-400 font-mono leading-relaxed">
+                        Enter your registered email address. We will transmit a secure access reset key to reset your keycode.
+                    </p>
+                    <div>
+                        <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1.5">Registered Email</label>
+                        <input type="email" id="forgot-email" required placeholder="name@syndicate.org" 
+                            class="w-full rounded-lg bg-obsidian-950 border border-obsidian-800 p-2.5 text-xs font-bold text-white placeholder-slate-750 focus:ring-1 focus:ring-amberWhiskey-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amberWhiskey-600 to-amberWhiskey-400 hover:from-amberWhiskey-500 hover:to-amberWhiskey-300 text-obsidian-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-amberWhiskey-500/10 font-mono">
+                        Transmit Reset Signal
+                    </button>
+                    <div class="text-center mt-4">
+                        <button type="button" onclick="showAuthView('signin')" class="text-[10px] text-amberWhiskey-400 hover:text-amberWhiskey-300 font-mono uppercase font-semibold">Return to Sign In</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Workspace -->
-    <main class="flex-grow max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col gap-4">
+    <main id="main-workspace" class="flex-grow max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col gap-4 hidden">
 
         <!-- Mobile Quick-Tab Selector -->
         <div class="flex md:hidden bg-obsidian-900 border border-obsidian-800 rounded-xl p-1 mb-2">
@@ -503,9 +652,8 @@
 
     <!-- Firebase SDK Integration Module -->
     <script type="module">
-        // Dynamic ESM Imports from Google CDN
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Reusable authentication module imports
+        import { initializeAuth, signIn, signUp, sendPasswordReset, signOut, onAuthStateChanged, signInWithGoogle } from "./auth.js";
         import { getDatabase, ref, set, get, onValue, remove, child } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // Global State variables
@@ -712,28 +860,54 @@
             }
 
             try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
+                // Initialize using auth module
+                const { app, auth: authObj } = initializeAuth(firebaseConfig);
+                auth = authObj;
                 db = getDatabase(app);
 
                 updateSyncUI(true, "CONNECTING...");
 
-                // Authenticate before setting up queries (Rule 3 prioritisation)
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Establish state change listener to manage UI overlays and database
+                onAuthStateChanged((user) => {
+                    const authContainer = document.getElementById("auth-container");
+                    const mainWorkspace = document.getElementById("main-workspace");
+                    const headerProfile = document.getElementById("header-profile");
+                    const headerActions = document.getElementById("header-actions");
+                    const emailDisplay = document.getElementById("user-display-email");
 
-                onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        // Use a stable shared key for anonymous sessions to ensure cross-device/cross-platform sync
-                        userId = user.isAnonymous ? 'syndicate-member' : user.uid;
+                        userId = user.uid;
+                        
+                        // Populate header details
+                        if (emailDisplay) emailDisplay.innerText = user.email || "node@syndicate.org";
+                        
+                        // Transition UI states
+                        if (authContainer) authContainer.classList.add("hidden");
+                        if (mainWorkspace) mainWorkspace.classList.remove("hidden");
+                        if (headerProfile) headerProfile.classList.remove("hidden");
+                        if (headerActions) headerActions.classList.remove("hidden");
+                        
                         updateSyncUI(true, "SECURE CLOUD SYNC");
+                        
+                        // Establish RTDB subscribers under verified UID
                         setupDatabaseSubscribers();
                     } else {
                         userId = null;
-                        updateSyncUI(false, "OFFLINE FALLBACK");
+                        
+                        // Reset forms
+                        showAuthLoading(false);
+                        const signinEmail = document.getElementById("signin-email");
+                        const signinPass = document.getElementById("signin-password");
+                        if (signinEmail) signinEmail.value = "";
+                        if (signinPass) signinPass.value = "";
+
+                        // Transition UI states back to overlay gateway
+                        if (authContainer) authContainer.classList.remove("hidden");
+                        if (mainWorkspace) mainWorkspace.classList.add("hidden");
+                        if (headerProfile) headerProfile.classList.add("hidden");
+                        if (headerActions) headerActions.classList.add("hidden");
+                        
+                        updateSyncUI(false, "ACCESS SECURED");
                     }
                 });
 
@@ -788,15 +962,45 @@
             try {
                 const initSnap = await get(userInitializedRef);
                 if (!initSnap.exists() || !initSnap.val()) {
-                    // Prepopulate empty user accounts with fallback defaults
-                    if (appState.ledger.length > 0) {
-                        for (const item of appState.ledger) {
-                            await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${item.id}`), item);
+                    // Migration check: retrieve existing data from previous shared anonymous node (syndicate-member)
+                    const sharedRef = ref(db, `artifacts/${appId}/users/syndicate-member`);
+                    const sharedSnap = await get(sharedRef);
+                    
+                    if (sharedSnap.exists()) {
+                        const sharedData = sharedSnap.val();
+                        console.log("Migrating data from shared syndicate-member to authenticated user path:", userId);
+                        
+                        // Copy ledger
+                        if (sharedData.ledger) {
+                            await set(ref(db, `artifacts/${appId}/users/${userId}/ledger`), sharedData.ledger);
                         }
-                    }
-                    if (appState.network.length > 0) {
-                        for (const item of appState.network) {
-                            await set(ref(db, `artifacts/${appId}/users/${userId}/network/${item.id}`), item);
+                        // Copy voided ledger
+                        if (sharedData.voided_ledger) {
+                            await set(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger`), sharedData.voided_ledger);
+                        }
+                        // Copy presets
+                        if (sharedData.presets) {
+                            await set(ref(db, `artifacts/${appId}/users/${userId}/presets`), sharedData.presets);
+                        }
+                        // Copy network
+                        if (sharedData.network) {
+                            await set(ref(db, `artifacts/${appId}/users/${userId}/network`), sharedData.network);
+                        }
+                        // Copy config
+                        if (sharedData.config) {
+                            await set(ref(db, `artifacts/${appId}/users/${userId}/config`), sharedData.config);
+                        }
+                    } else {
+                        // Prepopulate empty user accounts with local defaults
+                        if (appState.ledger.length > 0) {
+                            for (const item of appState.ledger) {
+                                await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${item.id}`), item);
+                            }
+                        }
+                        if (appState.network.length > 0) {
+                            for (const item of appState.network) {
+                                await set(ref(db, `artifacts/${appId}/users/${userId}/network/${item.id}`), item);
+                            }
                         }
                     }
                     await set(userInitializedRef, true);
@@ -1897,7 +2101,211 @@
             }, 800);
         }
 
+        // Toggle view between Sign In, Sign Up, and Forgot Password
+        function showAuthView(view) {
+            const formSignIn = document.getElementById("form-signin");
+            const formSignUp = document.getElementById("form-signup");
+            const formForgot = document.getElementById("form-forgot");
+            const authTitle = document.getElementById("auth-title");
+            const authSubtitle = document.getElementById("auth-subtitle");
+            const errorContainer = document.getElementById("auth-error-container");
+            const successContainer = document.getElementById("auth-success-container");
+
+            // Hide error and success states when switching views
+            if (errorContainer) errorContainer.classList.add("hidden");
+            if (successContainer) successContainer.classList.add("hidden");
+
+            if (view === 'signin') {
+                if (formSignIn) formSignIn.classList.remove("hidden");
+                if (formSignUp) formSignUp.classList.add("hidden");
+                if (formForgot) formForgot.classList.add("hidden");
+                if (authTitle) authTitle.innerText = "Secure Node Access";
+                if (authSubtitle) authSubtitle.innerText = "// Port 8080 // Syndicate Encryption";
+            } else if (view === 'signup') {
+                if (formSignIn) formSignIn.classList.add("hidden");
+                if (formSignUp) formSignUp.classList.remove("hidden");
+                if (formForgot) formForgot.classList.add("hidden");
+                if (authTitle) authTitle.innerText = "Register Node Credentials";
+                if (authSubtitle) authSubtitle.innerText = "// Port 8080 // Create Access Key";
+            } else if (view === 'forgot') {
+                if (formSignIn) formSignIn.classList.add("hidden");
+                if (formSignUp) formSignUp.classList.add("hidden");
+                if (formForgot) formForgot.classList.remove("hidden");
+                if (authTitle) authTitle.innerText = "Recover Access Keycode";
+                if (authSubtitle) authSubtitle.innerText = "// Port 8080 // Transmit Reset Signal";
+            }
+        }
+
+        function showAuthLoading(show, message = "// Authenticating node access...") {
+            const loading = document.getElementById("auth-loading");
+            const loadingText = document.getElementById("auth-loading-text");
+            const forms = document.getElementById("auth-forms");
+
+            if (show) {
+                if (loading) loading.classList.remove("hidden");
+                if (loadingText) loadingText.innerText = message;
+                if (forms) forms.classList.add("hidden");
+            } else {
+                if (loading) loading.classList.add("hidden");
+                if (forms) forms.classList.remove("hidden");
+            }
+        }
+
+        function showAuthError(message) {
+            const container = document.getElementById("auth-error-container");
+            const msgEl = document.getElementById("auth-error-msg");
+            if (container && msgEl) {
+                msgEl.innerText = message;
+                container.classList.remove("hidden");
+            }
+        }
+
+        function showAuthSuccess(message) {
+            const container = document.getElementById("auth-success-container");
+            const msgEl = document.getElementById("auth-success-msg");
+            if (container && msgEl) {
+                msgEl.innerText = message;
+                container.classList.remove("hidden");
+            }
+        }
+
+        // Form Submit: Sign In
+        async function handleSignInSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById("signin-email").value.trim();
+            const password = document.getElementById("signin-password").value;
+            
+            const errorContainer = document.getElementById("auth-error-container");
+            if (errorContainer) errorContainer.classList.add("hidden");
+
+            showAuthLoading(true, "// Authenticating node access...");
+            try {
+                await signIn(email, password);
+                showNotification("Syndicate authentication initialized.");
+            } catch (err) {
+                showAuthLoading(false);
+                let readableError = err.message || "Failed to establish authorization link.";
+                if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+                    readableError = "Node access denied. Invalid credentials key.";
+                } else if (err.code === "auth/network-request-failed") {
+                    readableError = "Network connection failed. Secure relay signal lost.";
+                } else if (err.code === "auth/invalid-email") {
+                    readableError = "Malformed email address structure.";
+                }
+                showAuthError(readableError);
+                showNotification("Authorization failure.", "error");
+            }
+        }
+
+        // Form Submit: Sign Up
+        async function handleSignUpSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById("signup-email").value.trim();
+            const password = document.getElementById("signup-password").value;
+            const confirmPassword = document.getElementById("signup-confirm-password").value;
+            
+            const errorContainer = document.getElementById("auth-error-container");
+            if (errorContainer) errorContainer.classList.add("hidden");
+
+            if (password !== confirmPassword) {
+                showAuthError("Keycode mismatch. Confirm keycode must match selected access key.");
+                return;
+            }
+
+            showAuthLoading(true, "// Registering node credentials...");
+            try {
+                await signUp(email, password);
+                showNotification("New syndicate node credentials deployed.");
+            } catch (err) {
+                showAuthLoading(false);
+                let readableError = err.message || "Registration failed.";
+                if (err.code === "auth/email-already-in-use") {
+                    readableError = "Email already registered to an active syndicate node.";
+                } else if (err.code === "auth/weak-password") {
+                    readableError = "Keycode too weak. Choose a stronger key code (min 6 characters).";
+                } else if (err.code === "auth/network-request-failed") {
+                    readableError = "Network connection failed. Secure relay signal lost.";
+                } else if (err.code === "auth/invalid-email") {
+                    readableError = "Malformed email address structure.";
+                }
+                showAuthError(readableError);
+                showNotification("Registration failed.", "error");
+            }
+        }
+
+        // Form Submit: Forgot Password Reset
+        async function handleForgotSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById("forgot-email").value.trim();
+            
+            const errorContainer = document.getElementById("auth-error-container");
+            const successContainer = document.getElementById("auth-success-container");
+            if (errorContainer) errorContainer.classList.add("hidden");
+            if (successContainer) successContainer.classList.add("hidden");
+
+            showAuthLoading(true, "// Transmitting reset signal...");
+            try {
+                await sendPasswordReset(email);
+                showAuthLoading(false);
+                showAuthSuccess("Password reset signal dispatched to your email registry.");
+                showNotification("Reset instructions dispatched.");
+            } catch (err) {
+                showAuthLoading(false);
+                let readableError = err.message || "Reset request failed.";
+                if (err.code === "auth/user-not-found") {
+                    readableError = "No registered node found with this email.";
+                } else if (err.code === "auth/network-request-failed") {
+                    readableError = "Network connection failed. Secure relay signal lost.";
+                } else if (err.code === "auth/invalid-email") {
+                    readableError = "Malformed email address structure.";
+                }
+                showAuthError(readableError);
+                showNotification("Reset signal failed.", "error");
+            }
+        }
+
+        // Sign Out action
+        async function handleSignOut() {
+            showNotification("Terminating node connection...");
+            try {
+                await signOut();
+                showNotification("Connection severed.", "error");
+            } catch (err) {
+                showNotification("Failed to sever node connection.", "error");
+            }
+        }
+
+        // Google Sign-In handler
+        async function handleGoogleSignIn() {
+            const errorContainer = document.getElementById("auth-error-container");
+            if (errorContainer) errorContainer.classList.add("hidden");
+
+            showAuthLoading(true, "// Handshaking with Google Auth...");
+            try {
+                await signInWithGoogle();
+                showNotification("Google authentication handshake established.");
+            } catch (err) {
+                showAuthLoading(false);
+                let readableError = err.message || "Failed to establish Google auth link.";
+                if (err.code === "auth/popup-closed-by-user") {
+                    readableError = "Authentication window closed before completion.";
+                } else if (err.code === "auth/network-request-failed") {
+                    readableError = "Network connection failed. Secure relay signal lost.";
+                } else if (err.code === "auth/operation-not-allowed") {
+                    readableError = "Google auth provider is not enabled in Firebase Console.";
+                }
+                showAuthError(readableError);
+                showNotification("Google Sign-In failed.", "error");
+            }
+        }
+
         // Bind all module functions explicitly to 'window' to ensure inline HTML click/change triggers resolve flawlessly
+        window.handleGoogleSignIn = handleGoogleSignIn;
+        window.showAuthView = showAuthView;
+        window.handleSignInSubmit = handleSignInSubmit;
+        window.handleSignUpSubmit = handleSignUpSubmit;
+        window.handleForgotSubmit = handleForgotSubmit;
+        window.handleSignOut = handleSignOut;
         window.openFirebaseConfigModal = openFirebaseConfigModal;
         window.closeFirebaseConfigModal = closeFirebaseConfigModal;
         window.saveFirebaseConfig = saveFirebaseConfig;
