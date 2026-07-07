@@ -1142,7 +1142,12 @@
                     await set(userInitializedRef, true);
                 }
             } catch (err) {
-                console.error("Error running user onboarding sync:", err);
+                console.error("Error running user onboarding sync:", {
+                    message: err.message,
+                    code: err.code,
+                    details: err.details || null,
+                    hint: "Verify that Firebase Security Rules allow read/write access under path: artifacts/" + appId + "/users/" + userId
+                });
             }
 
             // 1. Subscribe to Active Transactions Ledger
@@ -1287,6 +1292,12 @@
                     await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${newDeal.id}`), newDeal);
                     showNotification(`Logged trade under ${appState.label}`);
                 } catch (e) {
+                    console.error("Firebase write error [commitToBlackBook]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow write access at the path: artifacts/" + appId + "/users/" + userId + "/ledger/" + newDeal.id
+                    });
                     showNotification("Database write error.", "error");
                 }
             } else {
@@ -1310,6 +1321,12 @@
                     await remove(ref(db, `artifacts/${appId}/users/${userId}/ledger/${id}`));
                     showNotification("Deals updated. Item moved to Voided Log.");
                 } catch (e) {
+                    console.error("Firebase write error [deleteLedgerRow]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow write access under: artifacts/" + appId + "/users/" + userId
+                    });
                     showNotification("Failed updating database logs", "error");
                 }
             } else {
@@ -1336,6 +1353,12 @@
                     await remove(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger/${id}`));
                     showNotification("Restored deal logs back to Active Deals");
                 } catch (e) {
+                    console.error("Firebase write error [restoreLedgerRow]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow write access under: artifacts/" + appId + "/users/" + userId
+                    });
                     showNotification("Failed restoring database log", "error");
                 }
             } else {
@@ -1356,6 +1379,12 @@
                     await remove(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger/${id}`));
                     showNotification("Audit item permanently purged", "error");
                 } catch (e) {
+                    console.error("Firebase write error [purgeLedgerRow]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow remove access at: artifacts/" + appId + "/users/" + userId + "/voided_ledger/" + id
+                    });
                     showNotification("Failed deleting database log", "error");
                 }
             } else {
@@ -1410,6 +1439,12 @@
                     await set(ref(db, `artifacts/${appId}/users/${userId}/presets/${id}`), newProduct);
                     showNotification(`New preset ${rawCode} synced successfully.`);
                 } catch (e) {
+                    console.error("Firebase write error [submitNewProduct]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow write access at path: artifacts/" + appId + "/users/" + userId + "/presets/" + id
+                    });
                     showNotification("Sync target failure", "error");
                 }
             } else {
@@ -1470,6 +1505,12 @@
                     await remove(ref(db, `artifacts/${appId}/users/${userId}/presets/${id}`));
                     showNotification("Product preset removed.", "error");
                 } catch (e) {
+                    console.error("Firebase write error [deleteCustomPreset]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow remove access at path: artifacts/" + appId + "/users/" + userId + "/presets/" + id
+                    });
                     showNotification("Failed purging preset from database", "error");
                 }
             } else {
@@ -1691,6 +1732,12 @@
                     await set(ref(db, `artifacts/${appId}/users/${userId}/network/${newContact.id}`), newContact);
                     showNotification("New shadow yard node registered.");
                 } catch (e) {
+                    console.error("Firebase write error [submitNewNode]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow write access at path: artifacts/" + appId + "/users/" + userId + "/network/" + newContact.id
+                    });
                     showNotification("Failed to synchronize new node", "error");
                 }
             } else {
@@ -1710,6 +1757,12 @@
                     await remove(ref(db, `artifacts/${appId}/users/${userId}/network/${id}`));
                     showNotification("Shadow node removed.", "error");
                 } catch (e) {
+                    console.error("Firebase write error [deleteShadowNetworkContact]:", {
+                        message: e.message,
+                        code: e.code,
+                        details: e.details || null,
+                        hint: "Verify that Firebase Security Rules allow remove access at path: artifacts/" + appId + "/users/" + userId + "/network/" + id
+                    });
                     showNotification("Failed purging node from database", "error");
                 }
             } else {
