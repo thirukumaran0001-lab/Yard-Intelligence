@@ -1097,45 +1097,109 @@
             const userInitializedRef = ref(db, `artifacts/${appId}/users/${userId}/initialized`);
             try {
                 const initSnap = await get(userInitializedRef);
-                if (!initSnap.exists() || !initSnap.val()) {
-                    // Migration check: retrieve existing data from previous shared anonymous node (syndicate-member)
-                    const sharedRef = ref(db, `artifacts/${appId}/users/syndicate-member`);
-                    const sharedSnap = await get(sharedRef);
-                    
-                    if (sharedSnap.exists()) {
-                        const sharedData = sharedSnap.val();
-                        console.log("Migrating data from shared syndicate-member to authenticated user path:", userId);
-                        
-                        // Copy ledger
-                        if (sharedData.ledger) {
-                            await set(ref(db, `artifacts/${appId}/users/${userId}/ledger`), sharedData.ledger);
-                        }
-                        // Copy voided ledger
-                        if (sharedData.voided_ledger) {
-                            await set(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger`), sharedData.voided_ledger);
-                        }
-                        // Copy presets
-                        if (sharedData.presets) {
-                            await set(ref(db, `artifacts/${appId}/users/${userId}/presets`), sharedData.presets);
-                        }
-                        // Copy network
-                        if (sharedData.network) {
-                            await set(ref(db, `artifacts/${appId}/users/${userId}/network`), sharedData.network);
-                        }
-                        // Copy config
-                        if (sharedData.config) {
-                            await set(ref(db, `artifacts/${appId}/users/${userId}/config`), sharedData.config);
-                        }
-                    } else {
-                        // Prepopulate empty user accounts with local defaults
-                        if (appState.ledger.length > 0) {
-                            for (const item of appState.ledger) {
-                                await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${item.id}`), item);
+                const ledgerRef = ref(db, `artifacts/${appId}/users/${userId}/ledger`);
+                const ledgerSnap = await get(ledgerRef);
+
+                // If either initialized is not set, or the remote ledger is completely empty in Firebase, run migration/restore
+                if (!initSnap.exists() || !initSnap.val() || !ledgerSnap.exists()) {
+                    // Check if they have existing local backups in localStorage
+                    const localLedger = localStorage.getItem("yard_intel_ledger");
+                    const localVoided = localStorage.getItem("yard_intel_voidedLedger");
+                    const localPresets = localStorage.getItem("yard_intel_customPresets");
+                    const localNetwork = localStorage.getItem("yard_intel_network");
+
+                    let hasLocalData = false;
+
+                    if (localLedger) {
+                        try {
+                            const parsed = JSON.parse(localLedger);
+                            if (parsed && parsed.length > 0) {
+                                hasLocalData = true;
+                                console.log("Migrating local ledger to Firebase...");
+                                for (const item of parsed) {
+                                    await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${item.id}`), item);
+                                }
                             }
-                        }
-                        if (appState.network.length > 0) {
-                            for (const item of appState.network) {
-                                await set(ref(db, `artifacts/${appId}/users/${userId}/network/${item.id}`), item);
+                        } catch (e) { console.error(e); }
+                    }
+                    if (localVoided) {
+                        try {
+                            const parsed = JSON.parse(localVoided);
+                            if (parsed && parsed.length > 0) {
+                                hasLocalData = true;
+                                console.log("Migrating local voided ledger to Firebase...");
+                                for (const item of parsed) {
+                                    await set(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger/${item.id}`), item);
+                                }
+                            }
+                        } catch (e) { console.error(e); }
+                    }
+                    if (localPresets) {
+                        try {
+                            const parsed = JSON.parse(localPresets);
+                            if (parsed && parsed.length > 0) {
+                                hasLocalData = true;
+                                console.log("Migrating local custom presets to Firebase...");
+                                for (const item of parsed) {
+                                    await set(ref(db, `artifacts/${appId}/users/${userId}/presets/${item.id}`), item);
+                                }
+                            }
+                        } catch (e) { console.error(e); }
+                    }
+                    if (localNetwork) {
+                        try {
+                            const parsed = JSON.parse(localNetwork);
+                            if (parsed && parsed.length > 0) {
+                                hasLocalData = true;
+                                console.log("Migrating local network directory to Firebase...");
+                                for (const item of parsed) {
+                                    await set(ref(db, `artifacts/${appId}/users/${userId}/network/${item.id}`), item);
+                                }
+                            }
+                        } catch (e) { console.error(e); }
+                    }
+
+                    // If they don't have any custom local data in localStorage, check syndicate-member
+                    if (!hasLocalData) {
+                        // Migration check: retrieve existing data from previous shared anonymous node (syndicate-member)
+                        const sharedRef = ref(db, `artifacts/${appId}/users/syndicate-member`);
+                        const sharedSnap = await get(sharedRef);
+                        
+                        if (sharedSnap.exists()) {
+                            const sharedData = sharedSnap.val();
+                            console.log("Migrating data from shared syndicate-member to authenticated user path:", userId);
+                            
+                            // Copy ledger
+                            if (sharedData.ledger) {
+                                await set(ref(db, `artifacts/${appId}/users/${userId}/ledger`), sharedData.ledger);
+                            }
+                            // Copy voided ledger
+                            if (sharedData.voided_ledger) {
+                                await set(ref(db, `artifacts/${appId}/users/${userId}/voided_ledger`), sharedData.voided_ledger);
+                            }
+                            // Copy presets
+                            if (sharedData.presets) {
+                                await set(ref(db, `artifacts/${appId}/users/${userId}/presets`), sharedData.presets);
+                            }
+                            // Copy network
+                            if (sharedData.network) {
+                                await set(ref(db, `artifacts/${appId}/users/${userId}/network`), sharedData.network);
+                            }
+                            // Copy config
+                            if (sharedData.config) {
+                                await set(ref(db, `artifacts/${appId}/users/${userId}/config`), sharedData.config);
+                            }
+                        } else {
+                            // Prepopulate empty user accounts with local defaults
+                            if (appState.ledger.length > 0) {
+                                for (const item of appState.ledger) {
+                                    await set(ref(db, `artifacts/${appId}/users/${userId}/ledger/${item.id}`), item);
+                                }
+                            }
+                            if (appState.network.length > 0) {
+                                for (const item of appState.network) {
+                                    await set(ref(db, `artifacts/${appId}/users/${userId}/network/${item.id}`), item);
+                                }
                             }
                         }
                     }
