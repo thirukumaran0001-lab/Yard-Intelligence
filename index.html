@@ -88,6 +88,47 @@
     <!-- Top Status Bar Spacer for Standalone Apps -->
     <div class="h-4 bg-obsidian-950/90 sticky top-0 z-50"></div>
 
+    <!-- Fatal Configuration Error Screen -->
+    <div id="fatal-error-screen" class="hidden fixed inset-0 bg-obsidian-950 z-[9999] flex items-center justify-center p-4">
+        <div class="bg-obsidian-900 border border-smokyCrimson-500 rounded-2xl w-full max-w-lg p-6 md:p-8 shadow-2xl glowing-border-crimson relative font-mono">
+            <div class="flex items-center gap-3 border-b border-obsidian-800 pb-4 mb-6">
+                <div class="p-2.5 bg-smokyCrimson-500/10 rounded-xl border border-smokyCrimson-500/20 text-smokyCrimson-500 animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm md:text-base font-black tracking-widest text-white uppercase">// CRITICAL SYSTEM FAULT //</h2>
+                    <p class="text-[10px] text-smokyCrimson-400 uppercase tracking-wider font-mono">// Firebase Credentials Link Severed</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <p class="text-xs text-slate-400 leading-relaxed font-mono">
+                    The Syndicate Node database synchronization pipeline failed to initialize. The system detected that critical configuration keys are missing from the configuration source.
+                </p>
+                
+                <div class="bg-obsidian-950 p-4 rounded-xl border border-obsidian-800 space-y-2">
+                    <div class="text-[10px] font-black text-slate-500 uppercase font-mono">// DIAGNOSTIC CHECKLIST //</div>
+                    <div id="diagnostic-checklist" class="space-y-1.5 text-xs font-mono">
+                        <!-- Filled Dynamically -->
+                    </div>
+                </div>
+
+                <div class="bg-amberWhiskey-500/5 border border-amberWhiskey-500/10 p-3 rounded-lg text-[10px] text-amberWhiskey-400 leading-relaxed font-mono">
+                    <span class="font-bold">// RECOVERY PROTOCOL:</span> Ensure your Vercel Environment Variables (`FIREBASE_API_KEY`, `FIREBASE_PROJECT_ID`, etc.) are configured, or use the "Configure Cloud Sync Link" modal to paste a valid JSON configuration.
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between mt-6 pt-4 border-t border-obsidian-800">
+                <button onclick="openFirebaseConfigModal()" class="text-[10px] font-bold bg-slate-900 hover:bg-slate-800 border border-slate-850 text-slate-400 px-3 py-1.5 rounded transition uppercase font-mono">
+                    Configure Sync Key
+                </button>
+                <span class="text-[9px] text-slate-600 font-mono">// ERROR_CODE: CFG_INCOMPLETE</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Header Block -->
     <header class="border-b border-obsidian-800 bg-obsidian-900/90 backdrop-blur px-4 py-4 md:px-8 sticky top-4 z-40 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3">
@@ -119,9 +160,9 @@
             
             <!-- User Profile and Logout -->
             <div id="header-profile" class="hidden flex items-center gap-2 border-l border-obsidian-800 pl-3">
-                <div class="flex flex-col text-right">
+                <div onclick="openProfileModal()" class="flex flex-col text-right cursor-pointer hover:opacity-80 transition">
                     <span id="user-display-email" class="text-[9px] font-mono text-slate-400 truncate max-w-[150px]">user@syndicate.org</span>
-                    <span class="text-[8px] font-mono text-amberWhiskey-500 font-bold uppercase tracking-wider">AUTH_NODE</span>
+                    <span class="text-[8px] font-mono text-amberWhiskey-500 font-bold uppercase tracking-wider">AUTH_NODE // PROFILE</span>
                 </div>
                 <button onclick="handleSignOut()" class="px-2 py-1.5 rounded-lg text-[9px] font-bold bg-smokyCrimson-600 hover:bg-smokyCrimson-500 text-white transition font-mono uppercase" title="Sign Out of Syndicate Node">
                     LOGOUT
@@ -165,9 +206,45 @@
             </div>
 
             <!-- Forms Container -->
+            <!-- Forms Container -->
             <div id="auth-forms">
+                <!-- ONBOARDING FORM (Simulated Mobile Expo Onboarding) -->
+                <div id="form-onboarding" class="space-y-6 flex flex-col items-center">
+                    <div class="text-center space-y-2">
+                        <div class="w-16 h-16 mx-auto bg-amberWhiskey-500/10 rounded-2xl border border-amberWhiskey-500/20 text-amberWhiskey-500 flex items-center justify-center animate-pulse">
+                            <!-- Large Syndicate Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18M18.75 3v18M9 6h6M9 9h6M9 12h6M9 15h6M9 18h6" />
+                            </svg>
+                        </div>
+                        <h3 class="text-sm font-black text-white font-mono uppercase tracking-wider mt-4">// Syndicate Mobile Node //</h3>
+                        <p class="text-[11px] text-slate-400 font-mono leading-relaxed max-w-[280px]">
+                            Connect to the global shadow scrap metal logistics network. Real-time pricing models & secure audit ledger.
+                        </p>
+                    </div>
+
+                    <div class="w-full space-y-4 pt-2">
+                        <!-- Primary Google Login Button -->
+                        <button type="button" onclick="handleGoogleSignIn()" class="w-full py-4 bg-gradient-to-r from-amberWhiskey-600 to-amberWhiskey-400 hover:from-amberWhiskey-500 hover:to-amberWhiskey-300 text-obsidian-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-amberWhiskey-500/10 flex items-center justify-center gap-3 font-mono">
+                            <!-- SVG Google Logo -->
+                            <svg class="w-5 h-5 text-obsidian-950" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#050508"/>
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#050508"/>
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#050508"/>
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#050508"/>
+                            </svg>
+                            Continue with Google
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <span class="text-[10px] text-slate-500 font-mono">Prefer keycode access? </span>
+                        <button type="button" onclick="showAuthView('signin')" class="text-[10px] text-amberWhiskey-400 hover:text-amberWhiskey-300 font-mono uppercase font-semibold">Sign In with Credentials</button>
+                    </div>
+                </div>
+
                 <!-- SIGN IN FORM -->
-                <form id="form-signin" onsubmit="handleSignInSubmit(event)" class="space-y-4">
+                <form id="form-signin" onsubmit="handleSignInSubmit(event)" class="hidden space-y-4">
                     <div>
                         <label class="block text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono mb-1.5">Node Email Address</label>
                         <input type="email" id="signin-email" required placeholder="name@syndicate.org" 
@@ -198,9 +275,9 @@
                         </svg>
                         Google Auth Link
                     </button>
-                    <div class="text-center mt-4">
-                        <span class="text-[10px] text-slate-500 font-mono">New Node? </span>
-                        <button type="button" onclick="showAuthView('signup')" class="text-[10px] text-amberWhiskey-400 hover:text-amberWhiskey-300 font-mono uppercase font-semibold">Register Credentials</button>
+                    <div class="flex justify-between items-center mt-4 text-[10px] font-mono">
+                        <button type="button" onclick="showAuthView('signup')" class="text-amberWhiskey-400 hover:text-amberWhiskey-300 uppercase font-semibold">New Node?</button>
+                        <button type="button" onclick="showAuthView('onboarding')" class="text-slate-500 hover:text-slate-400 uppercase font-semibold">← Return</button>
                     </div>
                 </form>
 
@@ -238,9 +315,9 @@
                         </svg>
                         Google Auth Link
                     </button>
-                    <div class="text-center mt-4">
-                        <span class="text-[10px] text-slate-500 font-mono">Already registered? </span>
-                        <button type="button" onclick="showAuthView('signin')" class="text-[10px] text-amberWhiskey-400 hover:text-amberWhiskey-300 font-mono uppercase font-semibold">Sign In</button>
+                    <div class="flex justify-between items-center mt-4 text-[10px] font-mono">
+                        <button type="button" onclick="showAuthView('signin')" class="text-amberWhiskey-400 hover:text-amberWhiskey-300 uppercase font-semibold">Sign In</button>
+                        <button type="button" onclick="showAuthView('onboarding')" class="text-slate-500 hover:text-slate-400 uppercase font-semibold">← Return</button>
                     </div>
                 </form>
 
@@ -257,8 +334,9 @@
                     <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amberWhiskey-600 to-amberWhiskey-400 hover:from-amberWhiskey-500 hover:to-amberWhiskey-300 text-obsidian-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-amberWhiskey-500/10 font-mono">
                         Transmit Reset Signal
                     </button>
-                    <div class="text-center mt-4">
-                        <button type="button" onclick="showAuthView('signin')" class="text-[10px] text-amberWhiskey-400 hover:text-amberWhiskey-300 font-mono uppercase font-semibold">Return to Sign In</button>
+                    <div class="flex justify-between items-center mt-4 text-[10px] font-mono">
+                        <button type="button" onclick="showAuthView('signin')" class="text-amberWhiskey-400 hover:text-amberWhiskey-300 uppercase font-semibold">Sign In</button>
+                        <button type="button" onclick="showAuthView('onboarding')" class="text-slate-500 hover:text-slate-400 uppercase font-semibold">← Return</button>
                     </div>
                 </form>
             </div>
@@ -612,8 +690,57 @@
         </div>
     </div>
 
+    <!-- Modal: Profile Screen Overlay -->
+    <div id="profile-screen-modal" class="fixed inset-0 bg-obsidian-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative font-mono text-slate-100">
+            <!-- Close Button -->
+            <button onclick="closeProfileModal()" class="absolute top-4 right-6 text-slate-500 hover:text-white text-lg">×</button>
+            
+            <h3 class="text-sm font-black tracking-widest text-white uppercase mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-amberWhiskey-500 animate-pulse">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+                Syndicate Node Profile
+            </h3>
+            
+            <div class="flex flex-col items-center text-center space-y-4 mb-6">
+                <!-- User Avatar (Google Profile Photo) -->
+                <div class="relative">
+                    <img id="profile-avatar" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop" alt="User Avatar" class="w-24 h-24 rounded-full border-2 border-amberWhiskey-500 bg-obsidian-950 object-cover shadow-lg glowing-border-amber">
+                    <span class="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-obsidian-900 rounded-full" title="Node Online"></span>
+                </div>
+                
+                <div>
+                    <h4 id="profile-name" class="text-base font-black text-white uppercase tracking-wider">Broker Node</h4>
+                    <p id="profile-role" class="text-[10px] text-amberWhiskey-400 uppercase tracking-widest">// SECURE RELAY CLIENT</p>
+                </div>
+            </div>
+
+            <!-- Profile Info Fields -->
+            <div class="bg-obsidian-950 p-4 rounded-xl border border-obsidian-800 space-y-3 text-xs mb-6">
+                <div class="flex justify-between border-b border-obsidian-900 pb-1.5">
+                    <span class="text-slate-500 uppercase tracking-wider text-[10px]">Email Address</span>
+                    <span id="profile-email" class="text-slate-300 font-semibold truncate max-w-[180px]">broker@syndicate.org</span>
+                </div>
+                <div class="flex justify-between border-b border-obsidian-900 pb-1.5">
+                    <span class="text-slate-500 uppercase tracking-wider text-[10px]">Node Authority</span>
+                    <span class="text-emerald-400 font-bold uppercase text-[9px] tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/25">VERIFIED</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500 uppercase tracking-wider text-[10px]">Node Sync State</span>
+                    <span class="text-amberWhiskey-400 font-bold uppercase text-[9px] tracking-widest">ACTIVE</span>
+                </div>
+            </div>
+
+            <!-- Sign Out Button -->
+            <button onclick="handleProfileSignOut()" class="w-full py-3.5 bg-smokyCrimson-600 hover:bg-smokyCrimson-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-smokyCrimson-600/10 font-mono">
+                Terminate Node Connection
+            </button>
+        </div>
+    </div>
+
     <!-- Modal: Configure Firebase Cloud Link -->
-    <div id="firebase-config-modal" class="fixed inset-0 bg-obsidian-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="firebase-config-modal" class="fixed inset-0 bg-obsidian-950/80 backdrop-blur-sm z-[10000] flex items-center justify-center p-4 hidden">
         <div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
             <h3 class="text-sm font-black tracking-widest text-white uppercase font-mono mb-2 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-emerald-500 animate-pulse">
@@ -850,12 +977,19 @@
                 firebaseConfig.databaseURL = `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
             }
 
+            // Strict Validation of Firebase Configuration
+            const missingKeys = [];
             if (!firebaseConfig) {
-                console.log("No Firebase config detected. Running securely in single-session client storage mode.");
-                updateSyncUI(false, "MEM-ONLY");
-                renderPresets();
-                renderLedgerTable();
-                renderShadowDirectory();
+                missingKeys.push("firebaseConfig object is missing entirely");
+            } else {
+                if (!firebaseConfig.apiKey) missingKeys.push("apiKey (Firebase API Key)");
+                if (!firebaseConfig.authDomain) missingKeys.push("authDomain (Auth Domain)");
+                if (!firebaseConfig.projectId) missingKeys.push("projectId (Project ID)");
+                if (!firebaseConfig.appId) missingKeys.push("appId (App ID)");
+            }
+
+            if (missingKeys.length > 0) {
+                showFatalConfigError(missingKeys, firebaseConfig);
                 return;
             }
 
@@ -908,6 +1042,8 @@
                         if (headerActions) headerActions.classList.add("hidden");
                         
                         updateSyncUI(false, "ACCESS SECURED");
+                        // Redirect to Onboarding
+                        showAuthView('onboarding');
                     }
                 });
 
@@ -2101,8 +2237,9 @@
             }, 800);
         }
 
-        // Toggle view between Sign In, Sign Up, and Forgot Password
+        // Toggle view between Onboarding, Sign In, Sign Up, and Forgot Password
         function showAuthView(view) {
+            const formOnboarding = document.getElementById("form-onboarding");
             const formSignIn = document.getElementById("form-signin");
             const formSignUp = document.getElementById("form-signup");
             const formForgot = document.getElementById("form-forgot");
@@ -2115,19 +2252,29 @@
             if (errorContainer) errorContainer.classList.add("hidden");
             if (successContainer) successContainer.classList.add("hidden");
 
-            if (view === 'signin') {
+            if (view === 'onboarding') {
+                if (formOnboarding) formOnboarding.classList.remove("hidden");
+                if (formSignIn) formSignIn.classList.add("hidden");
+                if (formSignUp) formSignUp.classList.add("hidden");
+                if (formForgot) formForgot.classList.add("hidden");
+                if (authTitle) authTitle.innerText = "Secure Node Access";
+                if (authSubtitle) authSubtitle.innerText = "// Port 8080 // Syndicate Encryption";
+            } else if (view === 'signin') {
+                if (formOnboarding) formOnboarding.classList.add("hidden");
                 if (formSignIn) formSignIn.classList.remove("hidden");
                 if (formSignUp) formSignUp.classList.add("hidden");
                 if (formForgot) formForgot.classList.add("hidden");
                 if (authTitle) authTitle.innerText = "Secure Node Access";
                 if (authSubtitle) authSubtitle.innerText = "// Port 8080 // Syndicate Encryption";
             } else if (view === 'signup') {
+                if (formOnboarding) formOnboarding.classList.add("hidden");
                 if (formSignIn) formSignIn.classList.add("hidden");
                 if (formSignUp) formSignUp.classList.remove("hidden");
                 if (formForgot) formForgot.classList.add("hidden");
                 if (authTitle) authTitle.innerText = "Register Node Credentials";
                 if (authSubtitle) authSubtitle.innerText = "// Port 8080 // Create Access Key";
             } else if (view === 'forgot') {
+                if (formOnboarding) formOnboarding.classList.add("hidden");
                 if (formSignIn) formSignIn.classList.add("hidden");
                 if (formSignUp) formSignUp.classList.add("hidden");
                 if (formForgot) formForgot.classList.remove("hidden");
@@ -2275,6 +2422,76 @@
             }
         }
 
+        // Profile screen modal controller
+        function openProfileModal() {
+            const modal = document.getElementById("profile-screen-modal");
+            const user = auth ? auth.currentUser : null;
+
+            if (modal && user) {
+                const avatar = document.getElementById("profile-avatar");
+                const name = document.getElementById("profile-name");
+                const email = document.getElementById("profile-email");
+
+                if (avatar) {
+                    avatar.src = user.photoURL || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop";
+                }
+                if (name) {
+                    name.innerText = user.displayName || user.email.split('@')[0].toUpperCase();
+                }
+                if (email) {
+                    email.innerText = user.email || "node@syndicate.org";
+                }
+
+                modal.classList.remove("hidden");
+            }
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById("profile-screen-modal");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        async function handleProfileSignOut() {
+            closeProfileModal();
+            await handleSignOut();
+        }
+
+        // Fatal configuration check helper
+        function showFatalConfigError(missingKeys, config) {
+            console.error("CRITICAL CONFIGURATION ERROR: Required Firebase configuration keys are missing:", missingKeys);
+            
+            const authContainer = document.getElementById("auth-container");
+            const mainWorkspace = document.getElementById("main-workspace");
+            if (authContainer) authContainer.classList.add("hidden");
+            if (mainWorkspace) mainWorkspace.classList.add("hidden");
+            
+            const fatalErrorScreen = document.getElementById("fatal-error-screen");
+            if (fatalErrorScreen) {
+                fatalErrorScreen.classList.remove("hidden");
+                
+                const checklist = document.getElementById("diagnostic-checklist");
+                if (checklist) {
+                    checklist.innerHTML = "";
+                    
+                    const keysToCheck = ["apiKey", "authDomain", "projectId", "appId"];
+                    keysToCheck.forEach(key => {
+                        const isOk = config && config[key];
+                        const statusColor = isOk ? "text-emerald-400" : "text-smokyCrimson-400 font-bold";
+                        const statusIcon = isOk ? "✓" : "✗";
+                        const statusLabel = isOk ? "REGISTERED" : "MISSING";
+                        
+                        const item = document.createElement("div");
+                        item.className = "flex justify-between items-center py-1 border-b border-obsidian-900";
+                        item.innerHTML = `
+                            <span class="text-slate-400">${key}</span>
+                            <span class="${statusColor}">${statusIcon} ${statusLabel}</span>
+                        `;
+                        checklist.appendChild(item);
+                    });
+                }
+            }
+        }
+
         // Google Sign-In handler
         async function handleGoogleSignIn() {
             const errorContainer = document.getElementById("auth-error-container");
@@ -2293,6 +2510,8 @@
                     readableError = "Network connection failed. Secure relay signal lost.";
                 } else if (err.code === "auth/operation-not-allowed") {
                     readableError = "Google auth provider is not enabled in Firebase Console.";
+                } else if (err.code === "auth/unauthorized-domain") {
+                    readableError = "Domain Unauthorized: Please add '" + window.location.hostname + "' to your Firebase project's Authorized Domains list in the Auth Settings Console.";
                 }
                 showAuthError(readableError);
                 showNotification("Google Sign-In failed.", "error");
@@ -2300,6 +2519,9 @@
         }
 
         // Bind all module functions explicitly to 'window' to ensure inline HTML click/change triggers resolve flawlessly
+        window.openProfileModal = openProfileModal;
+        window.closeProfileModal = closeProfileModal;
+        window.handleProfileSignOut = handleProfileSignOut;
         window.handleGoogleSignIn = handleGoogleSignIn;
         window.showAuthView = showAuthView;
         window.handleSignInSubmit = handleSignInSubmit;
