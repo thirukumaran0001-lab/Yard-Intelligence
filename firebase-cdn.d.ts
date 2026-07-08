@@ -5,6 +5,8 @@ declare module "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" {
     export class GoogleAuthProvider {
         constructor();
     }
+    export function setPersistence(auth: any, persistence: any): Promise<any>;
+    export const browserLocalPersistence: any;
     export function signInWithPopup(auth: any, provider: any): Promise<any>;
     export function getAuth(app?: any): any;
     export function signInWithEmailAndPassword(auth: any, email: string, password: string): Promise<any>;

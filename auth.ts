@@ -7,7 +7,9 @@ import {
     signOut as firebaseSignOut,
     onAuthStateChanged as firebaseOnAuthStateChanged,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    setPersistence,
+    browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 let appInstance: any = null;
@@ -22,6 +24,10 @@ export function initializeAuth(firebaseConfig: any) {
     if (!appInstance) {
         appInstance = initializeApp(firebaseConfig);
         authInstance = getAuth(appInstance);
+        // Configure browser local persistence before sign-in
+        setPersistence(authInstance, browserLocalPersistence).catch((err: any) => {
+            console.error("Failed to set browser local persistence:", err);
+        });
     }
     return { app: appInstance, auth: authInstance };
 }

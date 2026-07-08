@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut, onAuthStateChanged as firebaseOnAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut, onAuthStateChanged as firebaseOnAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 let appInstance = null;
 let authInstance = null;
 /**
@@ -11,6 +11,10 @@ export function initializeAuth(firebaseConfig) {
     if (!appInstance) {
         appInstance = initializeApp(firebaseConfig);
         authInstance = getAuth(appInstance);
+        // Configure browser local persistence before sign-in
+        setPersistence(authInstance, browserLocalPersistence).catch((err) => {
+            console.error("Failed to set browser local persistence:", err);
+        });
     }
     return { app: appInstance, auth: authInstance };
 }
